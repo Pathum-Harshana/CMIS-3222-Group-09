@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AuraHub - Safe-Base Wall</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="style.css?v=pro-1" />
+</head>
+<body data-page="wall">
+  <div class="aura-glow-1"></div><div class="aura-glow-2"></div>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand"><div class="brand-icon">✨</div><h1>AuraHub<span>.</span></h1></div>
+      <nav class="sidebar-nav">
+        <a class="nav-btn active" href="wall.html"><i class="fa-solid fa-house"></i><span>Safe-Base Wall</span></a>
+        <a class="nav-btn" href="mood.html"><i class="fa-solid fa-chart-pie"></i><span>Mood Trends</span></a>
+        <a class="nav-btn" href="talent.html"><i class="fa-solid fa-user-group"></i><span>Talent Exchange</span></a>
+        <a class="nav-btn" href="resource.html"><i class="fa-solid fa-book-medical"></i><span>Resource Hub</span></a>
+      </nav>
+      <div class="sidebar-bottom"><button id="logoutBtn"><i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out</button></div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <label class="search-wrap"><i class="fa-solid fa-search"></i><input id="globalSearch" type="text" placeholder="Search posts..." /><button id="clearSearch" type="button"><i class="fa-solid fa-xmark"></i></button></label>
+        <button class="bell"><i class="fa-regular fa-bell"></i><span class="dot"></span></button>
+      </header>
+
+      <section class="page active">
+        <div class="hero">
+          <div>
+            <h2>Welcome back. 👋</h2>
+            <p>This is your safe space. Take a deep breath.</p>
+          </div>
+          <span class="hero-badge"><i class="fa-solid fa-spa"></i> Safe Zone</span>
+        </div>
+
+        <p>Share your thoughts anonymously, support peers, and build a healthier student community.</p>
+
+        <div class="ui-card mood-panel">
+          <div class="mood-panel-head"><h3>How are you feeling now?</h3><small>Quick check-in</small></div>
+          <div class="mood-options">
+            <button class="mood-chip" data-mood="happy" type="button">😄 Happy</button>
+            <button class="mood-chip" data-mood="calm" type="button">🙂 Calm</button>
+            <button class="mood-chip" data-mood="neutral" type="button">😐 Neutral</button>
+            <button class="mood-chip" data-mood="anxious" type="button">😟 Anxious</button>
+            <button class="mood-chip" data-mood="stressed" type="button">😫 Stressed</button>
+          </div>
+          <p style="margin-top:8px;">Tip: Select a mood before posting to improve your mood analytics.</p>
+        </div>
+
+        <h3 class="small-label">LOG YOUR DAILY AURA</h3>
+        <div class="composer ui-card">
+          <div class="composer-head"><i class="fa-solid fa-user-secret"></i><textarea id="postInput" rows="3" maxlength="600" placeholder="Vent anonymously... without judgment."></textarea></div>
+          <div class="composer-foot"><span class="pill"><i class="fa-solid fa-lock"></i> 100% Anonymous</span><div><small id="charCount">0/600</small><button id="postBtn" class="post-btn">Post to Wall</button></div></div>
+        </div>
+
+        <div class="ui-card stat" style="margin-top:10px;">
+          <h3>Community Guidelines</h3>
+          <ul>
+            <li>Be respectful and supportive in every message.</li>
+            <li>Avoid sharing personal identity details.</li>
+            <li>Report content that feels unsafe or harmful.</li>
+          </ul>
+        </div>
+
+        <div class="ui-card stat" style="margin-top:10px;">
+          <h3>Example Community Posts</h3>
+          <ul>
+            <li>“Today was stressful, but I completed one task and I’m proud of that.”</li>
+            <li>“I felt anxious before class, but talking to a friend helped me calm down.”</li>
+            <li>“Reminder: you are not behind — you are learning at your own pace.”</li>
+          </ul>
+          <p>No data available yet? Start by adding your first entry.</p>
+        </div>
+
+        <section class="feed-wrap">
+          <h3>Community Feed</h3>
+          <div id="feed" class="feed"></div>
+          <p id="feedEmpty" class="empty">No posts yet. Share your thoughts ✨</p>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <nav class="mobile-nav">
+    <a class="nav-btn active" href="wall.html"><i class="fa-solid fa-house"></i></a>
+    <a class="nav-btn" href="mood.html"><i class="fa-solid fa-chart-pie"></i></a>
+    <a class="nav-btn" href="talent.html"><i class="fa-solid fa-user-group"></i></a>
+    <a class="nav-btn" href="resource.html"><i class="fa-solid fa-book-medical"></i></a>
+  </nav>
+
+  <div id="toastContainer" class="toast-container"></div>
+  <script src="app.js?v=pro-2"></script>
+</body>
+</html>
