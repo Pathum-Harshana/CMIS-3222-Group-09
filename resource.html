@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AuraHub - Resource Hub</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="stylesheet" href="style.css?v=resource-4"></head>
+<body data-page="resource">
+<div class="app">
+  <aside class="sidebar"><div class="brand"><div class="brand-icon">✨</div><h1>AuraHub<span>.</span></h1></div>
+    <nav class="sidebar-nav">
+      <a class="nav-btn" href="wall.html"><i class="fa-solid fa-house"></i><span>Safe-Base Wall</span></a>
+      <a class="nav-btn" href="mood.html"><i class="fa-solid fa-chart-pie"></i><span>Mood Trends</span></a>
+      <a class="nav-btn" href="talent.html"><i class="fa-solid fa-user-group"></i><span>Talent Exchange</span></a>
+      <a class="nav-btn active" href="resource.html"><i class="fa-solid fa-book-medical"></i><span>Resource Hub</span></a>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <section class="page active">
+      <h2 class="page-title">Resource Hub</h2>
+      <p class="small-label">GET HELP FAST • LEARN CONTINUOUSLY • STAY WELL</p>
+
+      <div class="resource-grid">
+        <article class="ui-card resource-card">
+          <div class="resource-icon"><i class="fa-solid fa-user-doctor"></i></div>
+          <h3>Counselling Support</h3>
+          <p>Talk to assigned lecturers/counsellors for emotional and academic wellbeing support.</p>
+          <ul>
+            <li>Confidential one-to-one conversation</li>
+            <li>Stress, burnout, study pressure guidance</li>
+            <li>Follow-up plan with counsellor</li>
+          </ul>
+          <div class="resource-actions">
+            <button id="bookCounsellingBtn" class="post-btn" type="button">Book a Session</button>
+          </div>
+        </article>
+
+        <article class="ui-card resource-card danger">
+          <div class="resource-icon"><i class="fa-solid fa-truck-medical"></i></div>
+          <h3>Medical Support</h3>
+          <p>For urgent or severe situations beyond counselling, request medical assistance immediately.</p>
+          <ul>
+            <li>Escalation for serious distress</li>
+            <li>Medical referral support</li>
+            <li>Emergency line guidance</li>
+          </ul>
+          <div class="resource-actions">
+            <button id="medicalSupportBtn" class="danger-btn" type="button">Get Medical Support</button>
+          </div>
+        </article>
+      </div>
+
+      <div class="ui-card resource-articles">
+        <div class="section-head">
+          <h3>Recommended Learning & Wellbeing Articles</h3>
+        </div>
+
+        <div class="article-list">
+          <a class="article-item" href="https://www.nimh.nih.gov/health/topics/caring-for-your-mental-health" target="_blank" rel="noopener noreferrer">
+            <i class="fa-solid fa-brain"></i>
+            <div>
+              <h4>Caring for Your Mental Health (NIMH)</h4>
+              <p>Trusted guidance for maintaining emotional wellness and getting help when needed.</p>
+            </div>
+            <span><i class="fa-solid fa-up-right-from-square"></i></span>
+          </a>
+
+          <a class="article-item" href="https://www.helpguide.org/articles/stress/stress-management.htm" target="_blank" rel="noopener noreferrer">
+            <i class="fa-solid fa-heart-pulse"></i>
+            <div>
+              <h4>Stress Management Guide (HelpGuide)</h4>
+              <p>Practical stress reduction methods for day-to-day life and student pressure.</p>
+            </div>
+            <span><i class="fa-solid fa-up-right-from-square"></i></span>
+          </a>
+
+          <a class="article-item" href="https://www.coursera.org/articles/how-to-improve-your-skills" target="_blank" rel="noopener noreferrer">
+            <i class="fa-solid fa-lightbulb"></i>
+            <div>
+              <h4>How to Improve Your Skills (Coursera)</h4>
+              <p>Actionable ways to improve personal and professional skills over time.</p>
+            </div>
+            <span><i class="fa-solid fa-up-right-from-square"></i></span>
+          </a>
+
+          <a class="article-item" href="https://www.mindful.org/how-to-meditate/" target="_blank" rel="noopener noreferrer">
+            <i class="fa-solid fa-spa"></i>
+            <div>
+              <h4>How to Meditate (Mindful)</h4>
+              <p>Simple mindfulness steps to calm your mind and improve focus.</p>
+            </div>
+            <span><i class="fa-solid fa-up-right-from-square"></i></span>
+          </a>
+
+          <a class="article-item" href="https://www.edx.org/resources/how-to-improve-communication-skills" target="_blank" rel="noopener noreferrer">
+            <i class="fa-solid fa-comments"></i>
+            <div>
+              <h4>How to Improve Communication Skills (edX)</h4>
+              <p>Build confidence and communication strength for studies and career.</p>
+            </div>
+            <span><i class="fa-solid fa-up-right-from-square"></i></span>
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<nav class="mobile-nav">
+  <a class="nav-btn" href="wall.html"><i class="fa-solid fa-house"></i></a>
+  <a class="nav-btn" href="mood.html"><i class="fa-solid fa-chart-pie"></i></a>
+  <a class="nav-btn" href="talent.html"><i class="fa-solid fa-user-group"></i></a>
+  <a class="nav-btn active" href="resource.html"><i class="fa-solid fa-book-medical"></i></a>
+</nav>
+
+<div id="toastContainer" class="toast-container"></div>
+
+<div id="resourceModal" class="resource-modal hidden" aria-hidden="true">
+  <div class="resource-modal-backdrop" data-close-modal="1"></div>
+  <div class="resource-modal-card" role="dialog" aria-modal="true" aria-labelledby="resourceModalTitle">
+    <button id="resourceModalClose" class="resource-modal-close" type="button" aria-label="Close">×</button>
+    <h3 id="resourceModalTitle"></h3>
+    <p id="resourceModalMessage"></p>
+    <input id="resourceModalEmail" type="email" placeholder="Enter your email" />
+    <div class="resource-modal-actions">
+      <button id="resourceModalSubmit" class="post-btn" type="button">Submit</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js?v=resource-5"></script>
+</body></html>
