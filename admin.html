@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AuraHub Admin Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="auth.css?v=admin-pro-2" />
+</head>
+<body>
+  <main class="auth-shell">
+    <section class="auth-card wide">
+      <div class="admin-brand-row">
+        <h1 class="brand">aura<span>hub admin</span></h1>
+        <span class="admin-chip">Control Center</span>
+      </div>
+
+      <form id="adminLoginForm" class="form active">
+        <label>Email</label>
+        <input id="adminEmail" type="email" placeholder="admin@aurahub.local" required />
+        <label>Password</label>
+        <input id="adminPassword" type="password" placeholder="Enter password" required />
+        <button class="btn primary" type="submit">Admin Sign In</button>
+        <button class="btn ghost" type="button" onclick="location.href='index.html'">Back</button>
+      </form>
+
+      <section id="adminPanel" class="admin-panel hidden">
+        <div class="admin-head">
+          <div>
+            <h3>Dashboard Overview</h3>
+            <p class="muted">Monitor platform activity, moderation, and incoming support requests.</p>
+          </div>
+          <button id="adminLogoutBtn" class="btn ghost">Logout</button>
+        </div>
+
+        <div id="adminStatsCards" class="stats-grid"></div>
+
+        <div class="dash-block">
+          <h4>Resource Requests</h4>
+          <div id="adminResourceRequests"></div>
+        </div>
+
+        <div class="dash-block">
+          <h4>Recent Posts</h4>
+          <div id="adminPosts"></div>
+        </div>
+
+        <div class="dash-block">
+          <h4>Recent Comments</h4>
+          <div id="adminComments"></div>
+        </div>
+      </section>
+
+      <p id="adminMsg" class="msg"></p>
+    </section>
+  </main>
+  <script src="admin.js?v=admin-pro-2"></script>
+</body>
+</html>
