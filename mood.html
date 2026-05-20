@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AuraHub - Mood Trends</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="stylesheet" href="style.css?v=mood-redesign-1"></head>
+<body data-page="mood">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><div class="brand-icon">✨</div><h1>AuraHub<span>.</span></h1></div>
+    <nav class="sidebar-nav">
+      <a class="nav-btn" href="wall.html"><i class="fa-solid fa-house"></i><span>Safe-Base Wall</span></a>
+      <a class="nav-btn active" href="mood.html"><i class="fa-solid fa-chart-pie"></i><span>Mood Trends</span></a>
+      <a class="nav-btn" href="talent.html"><i class="fa-solid fa-user-group"></i><span>Talent Exchange</span></a>
+      <a class="nav-btn" href="resource.html"><i class="fa-solid fa-book-medical"></i><span>Resource Hub</span></a>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <section class="page active">
+      <h2 class="page-title">Mood Trends & Wellbeing Insights</h2>
+      <p class="small-label">MEANINGFUL VIEW: CONSISTENCY • RISK • RECOVERY • ACTIONS</p>
+
+      <div class="stat-grid mood-meaning-grid">
+        <article class="ui-card stat mood-kpi">
+          <h5>OVERALL MOOD SCORE</h5>
+          <h3 id="overallMoodScore">-</h3>
+          <p id="overallMoodScoreText" class="mood-kpi-note">Collecting your mood data...</p>
+        </article>
+
+        <article class="ui-card stat mood-kpi">
+          <h5>7-DAY CONSISTENCY</h5>
+          <h3 id="consistency7">-</h3>
+          <p id="consistency7Text" class="mood-kpi-note">Shows how consistently you check in daily.</p>
+        </article>
+
+        <article class="ui-card stat mood-kpi">
+          <h5>CURRENT STREAK</h5>
+          <h3 id="moodStreak">-</h3>
+          <p id="moodStreakText" class="mood-kpi-note">Daily check-in streak based on recent logs.</p>
+        </article>
+
+        <article class="ui-card stat mood-kpi">
+          <h5>RISK INDICATOR</h5>
+          <h3 id="riskIndicator">-</h3>
+          <p id="riskIndicatorText" class="mood-kpi-note">Based on anxious/stressed trend in recent logs.</p>
+        </article>
+      </div>
+
+      <div class="mood-analytics-grid">
+        <article class="ui-card mood-panel-card">
+          <div class="mood-graph-head">
+            <h3>Mood Frequency (Last 30 Entries)</h3>
+            <p class="graph-sub">Clear comparison of each mood type.</p>
+          </div>
+          <div id="freqBars" class="freq-bars"></div>
+        </article>
+
+        <article class="ui-card mood-panel-card">
+          <div class="mood-graph-head">
+            <h3>7-Day Emotional Risk Meter</h3>
+            <p class="graph-sub">Anxious + Stressed ratio in recent entries.</p>
+          </div>
+          <div class="risk-meter-wrap">
+            <div class="risk-meter-track">
+              <div id="riskMeterFill" class="risk-meter-fill"></div>
+            </div>
+            <div class="risk-meter-meta">
+              <strong id="riskMeterValue">0%</strong>
+              <span id="riskMeterLabel">No data</span>
+            </div>
+          </div>
+
+          <div class="heat-head">
+            <h4>14-Day Check-in Heat Strip</h4>
+            <p class="graph-sub">Each block = a day. Brighter means healthier daily average.</p>
+          </div>
+          <div id="checkinHeatStrip" class="checkin-heat-strip"></div>
+        </article>
+      </div>
+
+      <div class="mood-insights-grid">
+        <article class="ui-card insight-card">
+          <h4><i class="fa-solid fa-heart-pulse"></i> Trend Summary</h4>
+          <p id="trendSummary">Not enough data yet to generate a summary.</p>
+        </article>
+
+        <article class="ui-card insight-card">
+          <h4><i class="fa-solid fa-arrows-rotate"></i> Recovery Signal</h4>
+          <p id="recoverySignal">We’ll detect positive recovery once enough entries are available.</p>
+        </article>
+
+        <article class="ui-card insight-card">
+          <h4><i class="fa-solid fa-user-doctor"></i> Support Recommendation</h4>
+          <p id="supportRecommendation">Add more mood logs to receive personalized support guidance.</p>
+        </article>
+
+        <article class="ui-card insight-card">
+          <h4><i class="fa-solid fa-list-check"></i> Next Best Actions</h4>
+          <ul id="nextActions" class="insight-list">
+            <li>Log at least one mood daily for stronger insights.</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+  </main>
+</div>
+
+<nav class="mobile-nav">
+  <a class="nav-btn" href="wall.html"><i class="fa-solid fa-house"></i></a>
+  <a class="nav-btn active" href="mood.html"><i class="fa-solid fa-chart-pie"></i></a>
+  <a class="nav-btn" href="talent.html"><i class="fa-solid fa-user-group"></i></a>
+  <a class="nav-btn" href="resource.html"><i class="fa-solid fa-book-medical"></i></a>
+</nav>
+
+<div id="toastContainer" class="toast-container"></div>
+<script src="app.js?v=mood-redesign-2"></script>
+</body></html>

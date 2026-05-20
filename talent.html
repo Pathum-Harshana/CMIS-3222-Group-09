@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AuraHub - Talent Exchange</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="stylesheet" href="style.css?v=talent-2"></head>
+<body data-page="talent">
+<div class="app">
+  <aside class="sidebar"><div class="brand"><div class="brand-icon">✨</div><h1>AuraHub<span>.</span></h1></div>
+    <nav class="sidebar-nav">
+      <a class="nav-btn" href="wall.html"><i class="fa-solid fa-house"></i><span>Safe-Base Wall</span></a>
+      <a class="nav-btn" href="mood.html"><i class="fa-solid fa-chart-pie"></i><span>Mood Trends</span></a>
+      <a class="nav-btn active" href="talent.html"><i class="fa-solid fa-user-group"></i><span>Talent Exchange</span></a>
+      <a class="nav-btn" href="resource.html"><i class="fa-solid fa-book-medical"></i><span>Resource Hub</span></a>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <section class="page active">
+      <div class="section-head">
+        <h2 class="page-title">Talent Exchange</h2>
+      </div>
+
+      <div class="ui-card talent-tools">
+        <div class="talent-search-row">
+          <input id="talentSearchInput" type="text" placeholder="Search skill, student, description (e.g. photography)" />
+          <select id="talentCategoryFilter">
+            <option value="">All Categories</option>
+            <option>Photography</option>
+            <option>Design</option>
+            <option>Programming</option>
+            <option>Writing</option>
+            <option>Public Speaking</option>
+            <option>Video Editing</option>
+            <option>Music</option>
+            <option>Other</option>
+          </select>
+          <button id="talentSearchBtn" class="post-btn" type="button">Search</button>
+        </div>
+      </div>
+
+      <div class="ui-card talent-form-wrap">
+        <h3>Create Your Help Card</h3>
+        <div class="talent-form-grid">
+          <input id="talentSkillName" type="text" placeholder="Skill Name (e.g. Photography Basics)" />
+          <select id="talentSkillCategory">
+            <option value="">Select Category</option>
+            <option>Photography</option>
+            <option>Design</option>
+            <option>Programming</option>
+            <option>Writing</option>
+            <option>Public Speaking</option>
+            <option>Video Editing</option>
+            <option>Music</option>
+            <option>Other</option>
+          </select>
+          <input id="talentContactEmail" type="email" placeholder="Contact Email" />
+          <textarea id="talentDescription" rows="3" placeholder="Short description of how you can help others..."></textarea>
+        </div>
+        <div class="talent-form-actions">
+          <button id="talentCreateBtn" class="post-btn" type="button">Create Profile Card</button>
+        </div>
+      </div>
+
+      <div id="talentCards" class="card-grid talent-card-grid"></div>
+      <p id="talentEmpty" class="empty">No talent cards found.</p>
+    </section>
+  </main>
+</div>
+
+<nav class="mobile-nav">
+  <a class="nav-btn" href="wall.html"><i class="fa-solid fa-house"></i></a>
+  <a class="nav-btn" href="mood.html"><i class="fa-solid fa-chart-pie"></i></a>
+  <a class="nav-btn active" href="talent.html"><i class="fa-solid fa-user-group"></i></a>
+  <a class="nav-btn" href="resource.html"><i class="fa-solid fa-book-medical"></i></a>
+</nav>
+
+<div id="toastContainer" class="toast-container"></div>
+<script src="app.js?v=talent-3"></script>
+</body></html>
