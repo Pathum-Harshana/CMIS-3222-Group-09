@@ -26,6 +26,13 @@
   tabSignup.onclick = ()=>show("signup");
   gotoAdmin.onclick = ()=>location.href="admin.html";
 
+  const params = new URLSearchParams(location.search);
+  if (params.get("mode") === "signup") {
+    show("signup");
+  } else {
+    show("login");
+  }
+
   loginForm.onsubmit = async (e)=>{
     e.preventDefault();
     try{
@@ -45,7 +52,7 @@
         email: document.getElementById("signupEmail").value.trim(),
         password: document.getElementById("signupPassword").value
       });
-      location.href = "wall.html";
+      location.replace("index.html?mode=login");
     }catch(err){ authMsg.textContent = err.message; }
   };
 })();

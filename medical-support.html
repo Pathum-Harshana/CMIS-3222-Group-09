@@ -4,8 +4,9 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 <link rel="stylesheet" href="style.css?v=medical-support-1"></head>
 <body data-page="medical-support">
+  
 <div class="app">
-  <aside class="sidebar"><div class="brand"><div class="brand-icon">✨</div><h1>AuraHub<span>.</span></h1></div>
+  <aside class="sidebar"><div class="brand"><div class="brand-icon"></div><h1>AuraHub<span>.</span></h1></div>
     <nav class="sidebar-nav">
       <a class="nav-btn" href="wall.html"><i class="fa-solid fa-house"></i><span>Safe-Base Wall</span></a>
       <a class="nav-btn" href="mood.html"><i class="fa-solid fa-chart-pie"></i><span>Mood Trends</span></a>
@@ -21,11 +22,12 @@
       <h2 class="page-title">Medical Support</h2>
       <p class="small-label">INSTANT SUPPORT • UNIVERSITY MEDICAL CENTER • BOOK YOUR SLOT</p>
 
-      <div class="support-grid">
+      <div class="support-grid" style="display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:12px;align-items:start;">
+        <!-- LEFT: Appointments -->
         <article class="ui-card support-panel">
           <h3>University Medical Center Appointments</h3>
           <div class="support-list">
-            <div class="support-item">
+            <div class="support-item active">
               <div class="support-icon teal"><i class="fa-solid fa-stethoscope"></i></div>
               <div>
                 <h4>General Practitioner Consultation</h4>
@@ -50,6 +52,7 @@
           <button class="post-btn">Book Medical Appointment</button>
         </article>
 
+        <!-- MIDDLE: Calendar + Slots -->
         <article class="ui-card support-panel">
           <h3>Select Your Date & Time Slot</h3>
           <div class="calendar-card">
@@ -74,6 +77,7 @@
           </div>
         </article>
 
+        <!-- RIGHT: Summary + Help -->
         <article class="ui-card support-panel">
           <h3>Booking Summary & Get Help</h3>
           <div class="summary-box">
@@ -83,6 +87,7 @@
             <p><strong>Type:</strong> General Practitioner Consultation</p>
           </div>
           <button class="post-btn">Confirm Medical Slot</button>
+
           <div class="support-alert">
             <h4>Get Immediate Support</h4>
             <p><strong>Campus Security:</strong> 302-233-3000</p>
@@ -90,6 +95,12 @@
             <div class="support-phone"><i class="fa-solid fa-phone"></i></div>
           </div>
         </article>
+      </div>
+
+      <div class="page-next mt-4">
+        <a class="page-next-link" href="wall.html" aria-label="Go to Safe-Base Wall">
+          Home page <i class="fa-solid fa-house"></i>
+        </a>
       </div>
     </section>
   </main>

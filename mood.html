@@ -5,14 +5,21 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 <link rel="stylesheet" href="style.css?v=mood-redesign-1"></head>
 <body data-page="mood">
+  
 <div class="app">
   <aside class="sidebar">
-    <div class="brand"><div class="brand-icon">✨</div><h1>AuraHub<span>.</span></h1></div>
+    <div class="brand"><div class="brand-icon"></div><h1>AuraHub<span>.</span></h1></div>
     <nav class="sidebar-nav">
       <a class="nav-btn" href="wall.html"><i class="fa-solid fa-house"></i><span>Safe-Base Wall</span></a>
       <a class="nav-btn active" href="mood.html"><i class="fa-solid fa-chart-pie"></i><span>Mood Trends</span></a>
       <a class="nav-btn" href="talent.html"><i class="fa-solid fa-user-group"></i><span>Talent Exchange</span></a>
       <a class="nav-btn" href="resource.html"><i class="fa-solid fa-book-medical"></i><span>Resource Hub</span></a>
+
+      <!-- UPDATED: Sign Out placed after Resource Hub -->
+      <button id="logoutBtn" class="nav-btn nav-logout">
+        <i class="fa-solid fa-arrow-right-from-bracket"></i><span>Sign Out</span>
+      </button>
+      <!-- UPDATED: End Sign Out -->
     </nav>
   </aside>
 
@@ -101,6 +108,15 @@
             <li>Log at least one mood daily for stronger insights.</li>
           </ul>
         </article>
+      </div>
+
+      <div class="page-next mt-4">
+        <a class="page-prev-link" href="wall.html" aria-label="Go to Safe-Base Wall">
+          <i class="fa-solid fa-circle-arrow-left"></i> Prev page
+        </a>
+        <a class="page-next-link" href="talent.html" aria-label="Go to Talent Exchange">
+          Next page <i class="fa-solid fa-circle-arrow-right"></i>
+        </a>
       </div>
     </section>
   </main>

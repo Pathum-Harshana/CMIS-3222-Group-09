@@ -1,0 +1,11 @@
+wall-pagination-3 feed ,sign out button moved
+style.css- sign out button styled
+mood.html- sign out button added and styled.
+talent.html-sign out button added and styled.
+resource.html-sign out button added and styled.
+wall.html-bootstrap cdn added
+style.css-animations added
+resource.html-added two pages
+book session.html-restrucrured.
+medical support.html-restrucrured.
+style.css- styled book session,medical support pgs

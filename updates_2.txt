@@ -1,0 +1,8 @@
+added bg img
+edited auth.css
+edited auth.css with bg img
+changed logo
+
+style.css-logo visibility tweaks, feed pagination button styles, comment “view previous” link styles.
+wall.html-feed pagination markup, feed page size set to 1, moved feed section before guidelines.
+app.js-feed pagination logic switched to prev/next, FB-style comments paging (newest only).
