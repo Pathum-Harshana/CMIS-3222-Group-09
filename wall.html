@@ -12,14 +12,17 @@
   <div class="aura-glow-1"></div><div class="aura-glow-2"></div>
   <div class="app">
     <aside class="sidebar">
-      <div class="brand"><div class="brand-icon">✨</div><h1>AuraHub<span>.</span></h1></div>
+      <div class="brand"><div class="brand-icon"></div><h1>AuraHub<span>.</span></h1></div>
       <nav class="sidebar-nav">
         <a class="nav-btn active" href="wall.html"><i class="fa-solid fa-house"></i><span>Safe-Base Wall</span></a>
         <a class="nav-btn" href="mood.html"><i class="fa-solid fa-chart-pie"></i><span>Mood Trends</span></a>
         <a class="nav-btn" href="talent.html"><i class="fa-solid fa-user-group"></i><span>Talent Exchange</span></a>
         <a class="nav-btn" href="resource.html"><i class="fa-solid fa-book-medical"></i><span>Resource Hub</span></a>
+
+        <button id="logoutBtn" class="nav-btn nav-logout" type="button">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i><span>Sign Out</span>
+        </button>
       </nav>
-      <div class="sidebar-bottom"><button id="logoutBtn"><i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out</button></div>
     </aside>
 
     <main class="main">
@@ -57,6 +60,17 @@
           <div class="composer-foot"><span class="pill"><i class="fa-solid fa-lock"></i> 100% Anonymous</span><div><small id="charCount">0/600</small><button id="postBtn" class="post-btn">Post to Wall</button></div></div>
         </div>
 
+        <section class="feed-wrap">
+          <h3>Community Feed</h3>
+          <div id="feed" class="feed"></div>
+          <div class="feed-pagination mt-3" aria-label="Feed pagination">
+            <button id="feedPrevBtn" class="page-nav-btn" type="button"><i class="fa-solid fa-chevron-left"></i> Prev</button>
+            <small id="feedPageInfo">Page 1 of 1</small>
+            <button id="feedNextBtn" class="page-nav-btn" type="button">Next <i class="fa-solid fa-chevron-right"></i></button>
+          </div>
+          <p id="feedEmpty" class="empty">No posts yet. Share your thoughts ✨</p>
+        </section>
+
         <div class="ui-card stat" style="margin-top:10px;">
           <h3>Community Guidelines</h3>
           <ul>
@@ -76,21 +90,30 @@
           <p>No data available yet? Start by adding your first entry.</p>
         </div>
 
-        <section class="feed-wrap">
-          <h3>Community Feed</h3>
-          <div id="feed" class="feed"></div>
-          <p id="feedEmpty" class="empty">No posts yet. Share your thoughts ✨</p>
-        </section>
+        <div class="page-next mt-4">
+          <a class="page-prev-link" href="medical-support.html" aria-label="Go to Medical Support">
+            <i class="fa-solid fa-circle-arrow-left"></i> Prev page
+          </a>
+          <a class="page-next-link" href="mood.html" aria-label="Go to Mood Trends">
+            Next page <i class="fa-solid fa-circle-arrow-right"></i>
+          </a>
+        </div>
       </section>
     </main>
   </div>
 
   <nav class="mobile-nav">
+
     <a class="nav-btn active" href="wall.html"><i class="fa-solid fa-house"></i></a>
     <a class="nav-btn" href="mood.html"><i class="fa-solid fa-chart-pie"></i></a>
     <a class="nav-btn" href="talent.html"><i class="fa-solid fa-user-group"></i></a>
     <a class="nav-btn" href="resource.html"><i class="fa-solid fa-book-medical"></i></a>
   </nav>
+
+
+
+
+
 
   <div id="toastContainer" class="toast-container"></div>
   <script src="app.js?v=pro-2"></script>

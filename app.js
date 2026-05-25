@@ -20,26 +20,23 @@
   $("#logoutBtn")?.addEventListener("click", ()=>window.AuraHubAuth.logout());
 
   if(PAGE==="wall"){
-    let posts=[], commentsByPost={}, openComments={};
+    let posts=[], commentsByPost={}, openComments={}, openAllComments={};
     let selectedMood = localStorage.getItem(MOOD_KEY) || "";
-    let showAllPosts = false;
     const feed=$("#feed"), feedEmpty=$("#feedEmpty"), postInput=$("#postInput"), postBtn=$("#postBtn"), char=$("#charCount");
     const search=$("#globalSearch"), clear=$("#clearSearch"), moodChips=$$(".mood-chip");
+    const feedPrevBtn = $("#feedPrevBtn");
+    const feedNextBtn = $("#feedNextBtn");
+    const feedPageInfo = $("#feedPageInfo");
 
     const FEED_PREVIEW_LIMIT = 180;
-    const FEED_VISIBLE_COUNT = 3;
+    const FEED_PAGE_SIZE = 2;
+    let currentPage = 1;
     const esc=(s)=>String(s||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
     const fmt=(t)=>{ const d=new Date(t); return isNaN(d.getTime())?t:d.toLocaleString(); };
     const postFlagged=(id)=>!!jget(POST_FLAG)[String(id)];
     const togglePost=(id)=>{ const m=jget(POST_FLAG); const k=String(id); m[k]=!m[k]; jset(POST_FLAG,m); return m[k]; };
     const commentFlagged=(id)=>!!jget(COMMENT_FLAG)[String(id)];
     const toggleComment=(id)=>{ const m=jget(COMMENT_FLAG); const k=String(id); m[k]=!m[k]; jset(COMMENT_FLAG,m); return m[k]; };
-
-    const feedWrap = feed?.closest(".feed-wrap");
-    const feedMoreBtn = document.createElement("button");
-    feedMoreBtn.type = "button";
-    feedMoreBtn.className = "feed-more-btn hidden";
-    feedMoreBtn.textContent = "Read more";
 
     const moodValueOf = (el) => (el?.dataset?.mood || el?.getAttribute("data-mood") || "").trim().toLowerCase();
 
@@ -64,11 +61,6 @@
       paintMood();
       toast(`Mood selected: ${selectedMood}`);
     }));
-
-    feedMoreBtn.addEventListener("click", ()=>{
-      showAllPosts = true;
-      render(posts);
-    });
 
     paintMood();
 
@@ -96,13 +88,19 @@
     function render(list=posts){
       feed.innerHTML = "";
       const activeSearch = (search?.value || "").trim();
-      const visibleList = (!showAllPosts && !activeSearch)
-        ? list.slice(0, FEED_VISIBLE_COUNT)
-        : list;
+      const totalPages = Math.max(1, Math.ceil(list.length / FEED_PAGE_SIZE));
+      currentPage = Math.min(currentPage, totalPages);
+      const start = (currentPage - 1) * FEED_PAGE_SIZE;
+      const visibleList = list.slice(start, start + FEED_PAGE_SIZE);
       visibleList.forEach(p=>{
         const flagged = postFlagged(p.id);
-        const cmts = commentsByPost[p.id] || [];
+        const cmts = (commentsByPost[p.id] || [])
+          .slice()
+          .sort((a,b)=> new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
         const open = !!openComments[p.id];
+        const showAll = !!openAllComments[p.id];
+        const hasHidden = cmts.length > 1;
+        const visibleComments = showAll ? cmts : cmts.slice(0, 1);
         const n=document.createElement("article");
         const rawContent = String(p.content || "");
         const { short, trimmed } = truncateText(rawContent, FEED_PREVIEW_LIMIT);
@@ -127,24 +125,25 @@
             <button class="feed-btn ${open?"active":""}" data-action="comment-toggle">Comments (${cmts.length})</button>
           </div>
           <div class="comments-wrap ${open?"":"hidden"}">
-            <div class="comments-list">${cmts.length?cmts.map(renderComment).join(""):`<div class="comment-meta">No comments yet.</div>`}</div>
+            <div class="comments-list">${cmts.length?visibleComments.map(renderComment).join(""):`<div class="comment-meta">No comments yet.</div>`}</div>
+            ${hasHidden ? `<button class="feed-link" data-action="comment-expand">${showAll ? "Hide older comments" : "Show all comments"}</button>` : ""}
             <div class="comment-form"><input class="comment-input" maxlength="300" placeholder="Write anonymous comment..." /><button class="comment-btn" data-action="comment-submit">Send</button></div>
           </div>`;
         feed.appendChild(n);
       });
 
-      const shouldShowMore = !showAllPosts && !activeSearch && list.length > FEED_VISIBLE_COUNT;
-      if (feedWrap && !feedMoreBtn.isConnected) {
-        feedWrap.appendChild(feedMoreBtn);
+      if (feedPageInfo) {
+        feedPageInfo.textContent = `Page ${currentPage} of ${Math.max(1, Math.ceil(list.length / FEED_PAGE_SIZE))}`;
       }
-      feedMoreBtn.classList.toggle("hidden", !shouldShowMore);
+      feedPrevBtn?.toggleAttribute("disabled", currentPage <= 1);
+      feedNextBtn?.toggleAttribute("disabled", currentPage >= Math.max(1, Math.ceil(list.length / FEED_PAGE_SIZE)));
       feedEmpty?.classList.toggle("hidden", list.length>0);
     }
 
     async function load() {
       posts = await api.posts();
       posts = posts.sort((a,b)=> new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-      showAllPosts = false;
+      currentPage = 1;
       const all = await Promise.all(posts.map(async p=>[p.id, await api.comments(p.id).catch(()=>[])]));
       commentsByPost = Object.fromEntries(all);
       render(posts);
@@ -159,8 +158,15 @@
       await load(); toast("Posted");
     });
 
-    search?.addEventListener("input", ()=>{ const q=(search.value||"").trim().toLowerCase(); if(!q) return render(posts); render(posts.filter(p=>(p.content||"").toLowerCase().includes(q))); });
-    clear?.addEventListener("click", ()=>{ search.value=""; showAllPosts = false; render(posts); });
+    search?.addEventListener("input", ()=>{
+      const q=(search.value||"").trim().toLowerCase();
+      currentPage = 1;
+      if(!q) return render(posts);
+      render(posts.filter(p=>(p.content||"").toLowerCase().includes(q)));
+    });
+    clear?.addEventListener("click", ()=>{ search.value=""; currentPage = 1; render(posts); });
+    feedPrevBtn?.addEventListener("click", ()=>{ if(currentPage > 1){ currentPage -= 1; render(posts); } });
+    feedNextBtn?.addEventListener("click", ()=>{ currentPage += 1; render(posts); });
 
     feed?.addEventListener("click", async (e)=>{
       const btn = e.target.closest("[data-action]"); if(!btn) return;
@@ -180,6 +186,7 @@
       if(btn.dataset.action==="report-toggle"){ const f=togglePost(pid); render(posts); return toast(f?"Post reported":"Post report removed"); }
       if(btn.dataset.action==="delete"){ await api.deletePost(pid); await load(); return toast("Post deleted permanently"); }
       if(btn.dataset.action==="comment-toggle"){ openComments[pid]=!openComments[pid]; if(openComments[pid]) commentsByPost[pid]=await api.comments(pid).catch(()=>[]); return render(posts); }
+      if(btn.dataset.action==="comment-expand"){ openAllComments[pid]=!openAllComments[pid]; return render(posts); }
       if(btn.dataset.action==="comment-submit"){
         const input = card.querySelector(".comment-input");
         const content = (input?.value||"").trim();
@@ -387,6 +394,11 @@
     const contactEmail = $("#talentContactEmail");
     const description = $("#talentDescription");
     const createBtn = $("#talentCreateBtn");
+    const prevBtn = $("#talentPrevBtn");
+    const nextBtn = $("#talentNextBtn");
+    const pageInfo = $("#talentPageInfo");
+    const PAGE_SIZE = 2;
+    let currentPage = 1;
     const esc=(s)=>String(s||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
     const fmt=(t)=>{ const d=new Date(t); return isNaN(d.getTime())?t:d.toLocaleDateString(); };
 
@@ -407,12 +419,25 @@
       const q = encodeURIComponent((searchInput?.value || "").trim());
       const c = encodeURIComponent((categoryFilter?.value || "").trim());
       const list = await fetchJSON(`${API}/talent/list.php?q=${q}&category=${c}`);
-      cards.innerHTML = list.map(cardHTML).join("");
+      const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+      currentPage = Math.min(currentPage, totalPages);
+      const start = (currentPage - 1) * PAGE_SIZE;
+      const pageItems = list.slice(start, start + PAGE_SIZE);
+
+      cards.innerHTML = pageItems.map(cardHTML).join("");
       empty.classList.toggle("hidden", list.length > 0);
+
+      if (pageInfo) {
+        pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+      }
+      prevBtn?.toggleAttribute("disabled", currentPage <= 1);
+      nextBtn?.toggleAttribute("disabled", currentPage >= totalPages);
     }
 
-    searchBtn?.addEventListener("click", loadTalent);
-    categoryFilter?.addEventListener("change", loadTalent);
+    searchBtn?.addEventListener("click", ()=>{ currentPage = 1; loadTalent(); });
+    categoryFilter?.addEventListener("change", ()=>{ currentPage = 1; loadTalent(); });
+    prevBtn?.addEventListener("click", ()=>{ if (currentPage > 1) { currentPage -= 1; loadTalent(); } });
+    nextBtn?.addEventListener("click", ()=>{ currentPage += 1; loadTalent(); });
     createBtn?.addEventListener("click", async ()=>{
       const payload = {
         skill_name:(skillName.value||"").trim(),
@@ -449,10 +474,10 @@
         modalType = type;
         if (type === "medical") {
           modalTitle.textContent = "Medical Support Request";
-          modalMessage.textContent = "We will proceed your medical appointment immidiately";
+            modalMessage.textContent = "We will proceed with your medical appointment immediately.";
         } else {
           modalTitle.textContent = "Counselling Session Request";
-          modalMessage.textContent = "We will inform your session details";
+          modalMessage.textContent = "We will share your session details soon.";
         }
         modalEmail.value = u?.email || "";
         modal.classList.remove("hidden");
@@ -464,8 +489,7 @@
         modal.setAttribute("aria-hidden", "true");
       };
 
-      $("#bookCounsellingBtn")?.addEventListener("click", ()=>openModal("counselling"));
-      $("#medicalSupportBtn")?.addEventListener("click", ()=>openModal("medical"));
+        const medicalTrigger = $("#medicalSupportBtn");
       modalClose?.addEventListener("click", closeModal);
       $$("[data-close-modal='1']").forEach(el=>el.addEventListener("click", closeModal));
 

@@ -26,12 +26,14 @@
   tabSignup.onclick = ()=>show("signup");
   gotoAdmin.onclick = ()=>location.href="admin.html";
 
+  // If user lands on index.html with ?mode=signup, show sign up form
   const params = new URLSearchParams(location.search);
   if (params.get("mode") === "signup") {
     show("signup");
   } else {
     show("login");
   }
+
 
   loginForm.onsubmit = async (e)=>{
     e.preventDefault();
