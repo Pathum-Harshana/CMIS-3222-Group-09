@@ -1,6 +1,23 @@
 <?php
-header("Access-Control-Allow-Origin: *");
+// Set session cookie path for subdirectory and start session before any output
+if (session_status() === PHP_SESSION_NONE) {
+	session_set_cookie_params([
+		'path' => '/Aurahub/',
+		'httponly' => true,
+		'samesite' => 'Lax'
+	]);
+	session_start();
+}
+// Allow credentials and set correct origin for CORS
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+if ($origin) {
+	header("Access-Control-Allow-Origin: $origin");
+} else {
+	header("Access-Control-Allow-Origin: http://localhost"); // fallback for dev
+}
+header("Access-Control-Allow-Credentials: true");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json; charset=UTF-8");
 if ($_SERVER["REQUEST_METHOD"] === "OPTIONS") { http_response_code(200); exit; }
 

@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
   full_name VARCHAR(120) NOT NULL,
   email VARCHAR(190) NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
-  role ENUM('student','admin') NOT NULL DEFAULT 'student',
+  role ENUM('student','lecturer','admin') NOT NULL DEFAULT 'student',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -53,6 +53,32 @@ CREATE TABLE IF NOT EXISTS resource_requests (
   CONSTRAINT fk_resource_request_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS mentor_availability (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  lecturer_id INT NOT NULL,
+  available_date DATE NOT NULL,
+  start_time TIME NOT NULL,
+  end_time TIME NOT NULL,
+  note VARCHAR(255) NULL,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_availability_lecturer FOREIGN KEY (lecturer_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+
+CREATE TABLE IF NOT EXISTS session_bookings (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  mentor_id INT NOT NULL,
+  student_id INT NOT NULL,
+  session_date DATE NOT NULL,
+  start_time TIME NOT NULL,
+  end_time TIME NOT NULL,
+  status ENUM('booked','cancelled','completed') NOT NULL DEFAULT 'booked',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_booking_mentor FOREIGN KEY (mentor_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_booking_student FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 INSERT INTO users (full_name, email, password_hash, role)
-VALUES ('System Admin', 'admin@aurahub.local', '$2y$10$E0NRxGXNf4W6P2jA2h3G2uwS9I4gjJkL6mAc7If2WlqjR7m0Xg8ga', 'admin')
+VALUES ('System Admin', 'admin@aurahub.local', '$2y$10$s8Z8ZFiroFb/0F3u50.EZOpfP2XO0mmowVZBaR7mnWwN2ZtXFSnZK', 'admin')
 ON DUPLICATE KEY UPDATE email=email;

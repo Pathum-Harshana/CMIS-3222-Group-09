@@ -7,38 +7,115 @@
 
   const $ = (s,r=document)=>r.querySelector(s);
   const $$ = (s,r=document)=>[...r.querySelectorAll(s)];
+  const esc = (s)=>String(s ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
   const jget = (k)=>{ try { return JSON.parse(localStorage.getItem(k)||"{}"); } catch { return {}; } };
   const jset = (k,v)=>localStorage.setItem(k, JSON.stringify(v));
   const toast = (m)=>{ const c=$("#toastContainer"); if(!c) return; const d=document.createElement("div"); d.className="toast"; d.textContent=m; c.appendChild(d); setTimeout(()=>d.remove(),1800); };
 
-  async function fetchJSON(url,opt={}){ const r=await fetch(url,opt); const j=await r.json(); if(!r.ok||!j.success) throw new Error(j.message||"Failed"); return j.data; }
+  const setRoleVisibility = async () => {
+    try {
+      const me = await fetchJSON(`${API}/auth/me.php`);
+      const isLecturer = me?.role === "lecturer";
+      $$('[data-role="lecturer"]').forEach(el => {
+        el.classList.toggle("hidden", !isLecturer);
+      });
+    } catch {
+      $$('[data-role="lecturer"]').forEach(el => {
+        el.classList.add("hidden");
+      });
+    }
+  };
+
+  setRoleVisibility();
+
+  async function fetchJSON(url,opt={}){ const merged={ credentials:"include", ...opt }; const r=await fetch(url,merged); const j=await r.json(); if(!r.ok||!j.success) throw new Error(j.message||"Failed"); return j.data; }
   async function ensureAuth(){ try{ return await fetchJSON(`${API}/auth/me.php`);}catch{ location.href="index.html"; throw new Error("Unauthorized"); } }
 
   window.AuraHubAuth = {
     logout: async()=>{ await fetch(`${API}/auth/logout.php`,{method:"POST"}); location.href="index.html"; }
   };
-  $("#logoutBtn")?.addEventListener("click", ()=>window.AuraHubAuth.logout());
+  $$("[data-logout]").forEach(btn => {
+    btn.addEventListener("click", () => window.AuraHubAuth.logout());
+  });
+
+  function renderBookingCalendar(grid, title, selectedDate, onSelect) {
+    if (!grid) return;
+    const monthStart = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+    const firstDay = monthStart.getDay();
+    const daysInMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0).getDate();
+    const headers = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+    if (title) {
+      title.textContent = selectedDate.toLocaleDateString(undefined, { month:"short", day:"numeric", year:"numeric" });
+    }
+    grid.innerHTML = headers.map(day => `<span class="calendar-weekday">${day}</span>`).join("");
+    for (let i = 0; i < firstDay; i++) {
+      grid.insertAdjacentHTML("beforeend", `<span class="calendar-empty"></span>`);
+    }
+    for (let day = 1; day <= daysInMonth; day++) {
+      const active = day === selectedDate.getDate();
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = active ? "active" : "";
+      btn.textContent = String(day);
+      btn.addEventListener("click", () => {
+        onSelect(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), day));
+      });
+      grid.appendChild(btn);
+    }
+  }
+
+  const fmtDate = (value) => {
+    const d = new Date(`${value}T00:00:00`);
+    return isNaN(d.getTime()) ? value : d.toLocaleDateString(undefined, { month:"short", day:"numeric", year:"numeric" });
+  };
+  const fmtTime = (value) => String(value || "").slice(0, 5);
+  const slotLabel = (slot) => `${fmtTime(slot.start_time)} - ${fmtTime(slot.end_time)}`;
 
   if(PAGE==="wall"){
     let posts=[], commentsByPost={}, openComments={}, openAllComments={};
     let selectedMood = localStorage.getItem(MOOD_KEY) || "";
+    let visiblePosts = null;
     const feed=$("#feed"), feedEmpty=$("#feedEmpty"), postInput=$("#postInput"), postBtn=$("#postBtn"), char=$("#charCount");
     const search=$("#globalSearch"), clear=$("#clearSearch"), moodChips=$$(".mood-chip");
     const feedPrevBtn = $("#feedPrevBtn");
     const feedNextBtn = $("#feedNextBtn");
     const feedPageInfo = $("#feedPageInfo");
+    const wallSection = $("#wallSection");
+    const lecturerSection = $("#lecturerSection");
+    const wallNavButtons = $$('[data-view]');
 
     const FEED_PREVIEW_LIMIT = 180;
     const FEED_PAGE_SIZE = 2;
     let currentPage = 1;
     const esc=(s)=>String(s||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
     const fmt=(t)=>{ const d=new Date(t); return isNaN(d.getTime())?t:d.toLocaleString(); };
-    const postFlagged=(id)=>!!jget(POST_FLAG)[String(id)];
+
     const togglePost=(id)=>{ const m=jget(POST_FLAG); const k=String(id); m[k]=!m[k]; jset(POST_FLAG,m); return m[k]; };
-    const commentFlagged=(id)=>!!jget(COMMENT_FLAG)[String(id)];
-    const toggleComment=(id)=>{ const m=jget(COMMENT_FLAG); const k=String(id); m[k]=!m[k]; jset(COMMENT_FLAG,m); return m[k]; };
+
+
 
     const moodValueOf = (el) => (el?.dataset?.mood || el?.getAttribute("data-mood") || "").trim().toLowerCase();
+
+    const setWallView = (view) => {
+      if (!wallSection || !lecturerSection) return;
+      const showLecturer = view === "lecturer";
+      wallSection.classList.toggle("hidden", showLecturer);
+      lecturerSection.classList.toggle("hidden", !showLecturer);
+      wallNavButtons.forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.view === view);
+      });
+    };
+
+    const syncWallView = () => {
+      if (!lecturerSection) return;
+      const view = location.hash === "#lecturer" ? "lecturer" : "wall";
+      setWallView(view);
+    };
+
+    if (lecturerSection) {
+      window.addEventListener("hashchange", syncWallView);
+      syncWallView();
+    }
 
     const paintMood=()=>moodChips.forEach(ch=>{
       ch.classList.toggle("active", moodValueOf(ch) === selectedMood);
@@ -74,25 +151,29 @@
     };
 
     function renderComment(c){
-      const flagged = commentFlagged(c.id);
       return `<div class="comment-item" data-comment-id="${c.id}">
         <div class="comment-meta">Anonymous • ${fmt(c.created_at)}</div>
         <div class="comment-text">${esc(c.content)}</div>
-        <div class="comment-actions">
-          <button class="comment-action-btn ${flagged?"active":""}" data-action="comment-report-toggle"><i class="fa-solid fa-flag"></i> ${flagged?"Undo Report":"Report"}</button>
+          <div class="comment-actions">
           <button class="comment-action-btn delete" data-action="comment-delete"><i class="fa-solid fa-trash"></i> Delete</button>
         </div>
       </div>`;
     }
 
-    function render(list=posts){
+    function render(list=visiblePosts || posts){
+      visiblePosts = list;
       feed.innerHTML = "";
-      const activeSearch = (search?.value || "").trim();
+
+      // FIX: postFlagged was referenced but never defined.
+      // Use the existing togglePost() logic (backed by localStorage) as the flag state.
+      const postFlagged = (postId) => !!jget(POST_FLAG)[String(postId)] || false;
+
       const totalPages = Math.max(1, Math.ceil(list.length / FEED_PAGE_SIZE));
       currentPage = Math.min(currentPage, totalPages);
       const start = (currentPage - 1) * FEED_PAGE_SIZE;
       const visibleList = list.slice(start, start + FEED_PAGE_SIZE);
       visibleList.forEach(p=>{
+        // const flagged = togglePost(p.id); // not used for rendering; avoid side-effects
         const flagged = postFlagged(p.id);
         const cmts = (commentsByPost[p.id] || [])
           .slice()
@@ -115,12 +196,11 @@
           : `<p class="feed-body">${fullSafe}</p>`;
         n.className="feed-item"; n.dataset.id=p.id;
         n.innerHTML = `
-          ${flagged?`<span class="report-badge"><i class="fa-solid fa-flag"></i></span>`:""}
+
           <div class="feed-head"><strong>Anonymous Peer</strong><small>${fmt(p.created_at)}</small></div>
           ${bodyHtml}
           <div class="feed-actions">
             <button class="feed-btn" data-action="copy">Copy</button>
-            <button class="feed-btn ${flagged?"reported":""}" data-action="report-toggle"><i class="fa-solid fa-flag"></i> ${flagged?"Undo Report":"Report"}</button>
             <button class="feed-btn" data-action="delete"><i class="fa-solid fa-trash"></i> Delete</button>
             <button class="feed-btn ${open?"active":""}" data-action="comment-toggle">Comments (${cmts.length})</button>
           </div>
@@ -143,6 +223,7 @@
     async function load() {
       posts = await api.posts();
       posts = posts.sort((a,b)=> new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      visiblePosts = posts;
       currentPage = 1;
       const all = await Promise.all(posts.map(async p=>[p.id, await api.comments(p.id).catch(()=>[])]));
       commentsByPost = Object.fromEntries(all);
@@ -161,12 +242,12 @@
     search?.addEventListener("input", ()=>{
       const q=(search.value||"").trim().toLowerCase();
       currentPage = 1;
-      if(!q) return render(posts);
-      render(posts.filter(p=>(p.content||"").toLowerCase().includes(q)));
+      visiblePosts = q ? posts.filter(p=>(p.content||"").toLowerCase().includes(q)) : posts;
+      render(visiblePosts);
     });
-    clear?.addEventListener("click", ()=>{ search.value=""; currentPage = 1; render(posts); });
-    feedPrevBtn?.addEventListener("click", ()=>{ if(currentPage > 1){ currentPage -= 1; render(posts); } });
-    feedNextBtn?.addEventListener("click", ()=>{ currentPage += 1; render(posts); });
+    clear?.addEventListener("click", ()=>{ search.value=""; currentPage = 1; visiblePosts = posts; render(visiblePosts); });
+    feedPrevBtn?.addEventListener("click", ()=>{ if(currentPage > 1){ currentPage -= 1; render(visiblePosts); } });
+    feedNextBtn?.addEventListener("click", ()=>{ currentPage += 1; render(visiblePosts); });
 
     feed?.addEventListener("click", async (e)=>{
       const btn = e.target.closest("[data-action]"); if(!btn) return;
@@ -183,27 +264,23 @@
         btn.textContent = expanded ? "Read more" : "Read less";
         return;
       }
-      if(btn.dataset.action==="report-toggle"){ const f=togglePost(pid); render(posts); return toast(f?"Post reported":"Post report removed"); }
+
       if(btn.dataset.action==="delete"){ await api.deletePost(pid); await load(); return toast("Post deleted permanently"); }
-      if(btn.dataset.action==="comment-toggle"){ openComments[pid]=!openComments[pid]; if(openComments[pid]) commentsByPost[pid]=await api.comments(pid).catch(()=>[]); return render(posts); }
-      if(btn.dataset.action==="comment-expand"){ openAllComments[pid]=!openAllComments[pid]; return render(posts); }
+      if(btn.dataset.action==="comment-toggle"){ openComments[pid]=!openComments[pid]; if(openComments[pid]) commentsByPost[pid]=await api.comments(pid).catch(()=>[]); return render(visiblePosts || posts); }
+      if(btn.dataset.action==="comment-expand"){ openAllComments[pid]=!openAllComments[pid]; return render(visiblePosts || posts); }
       if(btn.dataset.action==="comment-submit"){
         const input = card.querySelector(".comment-input");
         const content = (input?.value||"").trim();
         if(!content) return toast("Write a comment first");
         await api.createComment(pid, content);
-        commentsByPost[pid]=await api.comments(pid); openComments[pid]=true; render(posts); return toast("Comment added");
+        commentsByPost[pid]=await api.comments(pid); openComments[pid]=true; render(visiblePosts || posts); return toast("Comment added");
       }
-      if(btn.dataset.action==="comment-report-toggle"){
-        const cid = Number(btn.closest(".comment-item")?.dataset.commentId||0);
-        if(!cid) return;
-        const f = toggleComment(cid); render(posts); return toast(f?"Comment reported":"Comment report removed");
-      }
+
       if(btn.dataset.action==="comment-delete"){
         const cid = Number(btn.closest(".comment-item")?.dataset.commentId||0);
         if(!cid) return;
         await api.deleteComment(cid);
-        commentsByPost[pid]=await api.comments(pid); openComments[pid]=true; render(posts); return toast("Comment deleted permanently");
+        commentsByPost[pid]=await api.comments(pid); openComments[pid]=true; render(visiblePosts || posts); return toast("Comment deleted permanently");
       }
     });
 
@@ -410,7 +487,7 @@
         <p>${esc(p.description)}</p>
         <div class="talent-actions">
           <a href="mailto:${encodeURIComponent(p.contact_email)}?subject=${encodeURIComponent("AuraHub help request: "+p.skill_name)}">Contact</a>
-          ${own ? `<button class="delete" data-action="talent-delete">Delete</button>` : ""}
+          ${own ? `<button class="delete" data-action="talent-delete">Delete</button><button class="edit" data-action="talent-edit">Edit</button>` : ""}
         </div>
       </article>`;
     }
@@ -440,21 +517,86 @@
     nextBtn?.addEventListener("click", ()=>{ currentPage += 1; loadTalent(); });
     createBtn?.addEventListener("click", async ()=>{
       const payload = {
-        skill_name:(skillName.value||"").trim(),
-        description:(description.value||"").trim(),
-        skill_category:(skillCategory.value||"").trim(),
-        contact_email:(contactEmail.value||"").trim()
+        skill_name:(skillName?.value||"").trim(),
+        description:(description?.value||"").trim(),
+        skill_category:(skillCategory?.value||"").trim(),
+        contact_email:(contactEmail?.value||"").trim()
       };
-      await fetchJSON(`${API}/talent/create.php`, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload) });
-      skillName.value=""; description.value=""; skillCategory.value="";
-      await loadTalent(); toast("Talent card created");
+      console.log('[DEBUG] talent/create payload', payload);
+      console.log('[DEBUG] talent inputs existence', {
+        skillName: !!skillName,
+        skillCategory: !!skillCategory,
+        description: !!description,
+        contactEmail: !!contactEmail
+      });
+
+      // Client-side validation to prevent 422 from missing fields
+      if (!payload.skill_name) return toast("Skill name is required");
+      if (!payload.skill_category) return toast("Skill category is required");
+      if (!payload.description) return toast("Description is required");
+      if (!payload.contact_email) return toast("Contact email is required");
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.contact_email)) return toast("Enter a valid contact email");
+
+      try {
+        const created = await fetchJSON(`${API}/talent/create.php`, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload) });
+        console.log('[DEBUG] talent/create response', created);
+
+        skillName.value=""; description.value=""; skillCategory.value=""; contactEmail.value="";
+        await loadTalent(); toast("Talent card created");
+      } catch (err) {
+        console.error('[DEBUG] talent/create failed', err);
+        toast(err?.message || "Failed to create talent profile");
+      }
     });
 
     cards?.addEventListener("click", async (e)=>{
-      const btn = e.target.closest('[data-action="talent-delete"]'); if(!btn) return;
-      const card = btn.closest("[data-id]"); const id = Number(card?.dataset.id || 0); if(!id) return;
-      await fetchJSON(`${API}/talent/delete.php`, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id }) });
-      await loadTalent(); toast("Talent card deleted");
+      const delBtn = e.target.closest('[data-action="talent-delete"]');
+      if(delBtn){
+        const card = delBtn.closest("[data-id]"); const id = Number(card?.dataset.id || 0); if(!id) return;
+        await fetchJSON(`${API}/talent/delete.php`, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id }) });
+        await loadTalent(); toast("Talent card deleted");
+        return;
+      }
+
+      const editBtn = e.target.closest('[data-action="talent-edit"]');
+      if(editBtn){
+        const card = editBtn.closest("[data-id]"); const id = Number(card?.dataset.id || 0); if(!id) return;
+        const existing = me; // owner-only edit
+
+        // Simple prompt-based editor (no extra modal markup needed)
+        const currentSkill = card.querySelector('h3')?.textContent?.trim() || "";
+        const currentCategory = card.querySelector('.talent-meta .tag:nth-child(2)')?.textContent?.trim() || "";
+        const currentDesc = card.querySelector('p')?.textContent?.trim() || "";
+        const currentEmail = contactEmail?.value || '';
+
+        const skill = window.prompt("Skill name", currentSkill) || "";
+        if(!skill.trim()) return toast("Skill name required");
+
+        const category = window.prompt("Skill category", currentCategory) || "";
+        if(!category.trim()) return toast("Skill category required");
+
+        const description = window.prompt("Description", currentDesc) || "";
+        if(!description.trim()) return toast("Description required");
+
+        const email = window.prompt("Contact email", currentEmail) || "";
+        if(!email.trim()) return toast("Contact email required");
+
+        await fetchJSON(`${API}/talent/update.php`, {
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({
+            id,
+            skill_name: skill.trim(),
+            skill_category: category.trim(),
+            description: description.trim(),
+            contact_email: email.trim()
+          })
+        });
+
+        await loadTalent();
+        toast("Talent profile updated");
+        return;
+      }
     });
 
     ensureAuth().then(async (u)=>{ me = u; contactEmail.value = u.email || ""; await loadTalent(); }).catch(err=>toast(err.message));
@@ -513,5 +655,482 @@
         closeModal();
       });
     }).catch(err=>toast(err.message));
+  }
+
+  // --- BOOK SESSION PAGE LOGIC ---
+  // This block runs only on the Book a Session page.
+  if(PAGE==="book-session"){
+    ensureAuth().then((u)=>{
+      // --- DOM ELEMENTS ---
+      const mentorList = $(".support-list"); // Where mentor cards are rendered
+      let mentorItems = $$('[data-mentor-card]');
+      let slotButtons = $$('[data-slot]');
+      const calendarTitle = $(".calendar-head span");
+      const calendarGrid = $(".calendar-grid");
+      const calendarPrev = $("[data-calendar-prev]");
+      const calendarNext = $("[data-calendar-next]");
+      const summary = $("[data-session-summary]");
+      const confirmBtn = $("[data-confirm-booking]");
+      const chatWindow = $("[data-chat-window]");
+      const chatInput = $("[data-chat-input]");
+      const chatSend = $("[data-chat-send]");
+      // --- STATE VARIABLES ---
+      let selectedDate = new Date(2026, 9, 15); // Default selected date
+      let confirmed = false;
+      let requestSaved = false;
+      let mentors = [];
+      let selectedLecturerId = null;
+      let selectedSlots = [];
+      let selectedSlotId = null;
+
+      // --- UTILITY FUNCTIONS ---
+      // Get the text of the currently active item in a list
+      const activeText = (items, fallback) => {
+        const active = items.find(item => item.classList.contains("active"));
+        return active?.querySelector("h4")?.textContent?.trim() || active?.textContent?.trim() || fallback;
+      };
+      // Format a date for display
+      const formatDate = (d) => d instanceof Date ? d.toLocaleDateString(undefined, { month:"short", day:"numeric", year:"numeric" }) : d;
+
+      // --- RENDER SLOTS FOR SELECTED MENTOR ---
+      const renderSlots = () => {
+        const slotList = $(".slot-list");
+        const noSlotsMsg = $(".no-slots-message");
+        if (!slotList) return;
+        if (selectedSlots.length) {
+          // Render each available slot as a button
+          slotList.innerHTML = selectedSlots.map((slot, idx) => `<button class="slot-btn ${idx === 0 ? "active" : ""}" type="button" data-slot data-slot-id="${slot.id}" data-slot-date="${slot.available_date}">${fmtDate(slot.available_date)} | ${slotLabel(slot)}</button>`).join("");
+          if (noSlotsMsg) noSlotsMsg.style.display = "none";
+        } else {
+          // Show message if no slots
+          slotList.innerHTML = "";
+          if (noSlotsMsg) noSlotsMsg.style.display = "block";
+        }
+        slotButtons = $$("[data-slot]");
+        const activeSlot = slotButtons.find(btn => btn.classList.contains("active"));
+        selectedSlotId = activeSlot?.dataset.slotId || null;
+        if (activeSlot?.dataset.slotDate) selectedDate = new Date(`${activeSlot.dataset.slotDate}T00:00:00`);
+        // Add click listeners to slot buttons
+        slotButtons.forEach(btn => btn.addEventListener("click", () => {
+          slotButtons.forEach(x => x.classList.remove("active"));
+          btn.classList.add("active");
+          selectedSlotId = btn.dataset.slotId || null;
+          if (btn.dataset.slotDate) selectedDate = new Date(`${btn.dataset.slotDate}T00:00:00`);
+          updateSummary();
+        }));
+      };
+
+      // --- RENDER MENTOR CARDS ---
+      const renderMentors = (rows) => {
+        mentors = rows;
+        const noMentorsMsg = $(".no-mentors-message");
+        if (mentorList) {
+          if (mentors.length) {
+            // Render each mentor as a card
+            mentorList.innerHTML = mentors.map((mentor, idx) => `
+              <article class="support-item ${idx === 0 ? "active" : ""}" role="button" tabindex="0" data-mentor-card data-lecturer-id="${mentor.lecturer_id}">
+                <div class="mentor-avatar"></div>
+                <div>
+                  <h4>${esc(mentor.lecturer_name)}</h4>
+                  <small>${esc(mentor.lecturer_email)}</small>
+                  <div class="mentor-slots-preview">${mentor.slots && mentor.slots.length ? `${mentor.slots.length} available slot${mentor.slots.length === 1 ? '' : 's'}` : '<span style="color:#c00">No slots available</span>'}</div>
+                </div>
+                ${idx === 0 ? `<span class="badge-check"><i class="fa-solid fa-check"></i></span>` : ""}
+              </article>
+            `).join("");
+            if (noMentorsMsg) noMentorsMsg.style.display = "none";
+            mentorItems = $$("[data-mentor-card]");
+            selectedLecturerId = mentorItems[0]?.dataset.lecturerId || null;
+            selectedSlots = mentors[0]?.slots || [];
+            bindMentors();
+            renderSlots();
+          } else {
+            mentorList.innerHTML = '<div style="color:#c00;padding:10px;">No mentors found.</div>';
+            if (noMentorsMsg) noMentorsMsg.style.display = "block";
+            selectedLecturerId = null;
+            selectedSlots = [];
+            renderSlots();
+          }
+        }
+      };
+
+      // --- UPDATE SUMMARY PANEL ---
+      const updateSummary = () => {
+        if (!summary) return;
+        const mentor = activeText(mentorItems, "Selected mentor");
+        const activeSlot = slotButtons.find(btn => btn.classList.contains("active"));
+        summary.innerHTML = `
+          <p><strong>Mentor:</strong> ${mentor}</p>
+          <p><strong>Date:</strong> ${formatDate(selectedDate)}</p>
+          <p><strong>Time:</strong> ${activeSlot?.textContent?.replace(/^.*\|\s*/, "").trim() || activeText(slotButtons, "Selected time")}</p>
+          <p><strong>Email:</strong> ${u.email || "Your account email"}</p>
+        `;
+        // Update the calendar UI
+        renderBookingCalendar(calendarGrid, calendarTitle, selectedDate, (date) => {
+          selectedDate = date;
+          updateSummary();
+        });
+        // Show chat prompt if not confirmed
+        if (!confirmed && chatWindow) {
+          chatWindow.textContent = `Book your session to start chatting with ${mentor.split(" ").slice(-1)[0] || "your mentor"}.`;
+        }
+      };
+
+      // --- SAVE COUNSELLING REQUEST (BOOKING) ---
+      const saveCounsellingRequest = async () => {
+        await fetchJSON(`${API}/resource/create_request.php`, {
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({
+            request_type: "counselling",
+            requester_email: u.email || ""
+          })
+        });
+        toast("Counselling request saved");
+      };
+
+      // --- BIND MENTOR CARD EVENTS ---
+      function bindMentors(){
+        mentorItems.forEach((item, idx) => item.addEventListener("click", () => {
+          // Set clicked mentor as active
+          mentorItems.forEach(x => {
+            x.classList.remove("active");
+            x.querySelector(".badge-check")?.remove();
+          });
+          item.classList.add("active");
+          item.insertAdjacentHTML("beforeend", `<span class="badge-check"><i class="fa-solid fa-check"></i></span>`);
+          selectedLecturerId = item.dataset.lecturerId || null;
+          // Update slots for selected mentor
+          const mentor = mentors.find(m => String(m.lecturer_id) === String(selectedLecturerId));
+          selectedSlots = mentor && Array.isArray(mentor.slots) ? mentor.slots : [];
+          renderSlots();
+          updateSummary();
+        }));
+        // Allow keyboard selection
+        mentorItems.forEach(item => item.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            item.click();
+          }
+        }));
+      }
+      bindMentors();
+
+      // --- BIND SLOT BUTTON EVENTS ---
+      slotButtons.forEach(btn => btn.addEventListener("click", () => {
+        slotButtons.forEach(x => x.classList.remove("active"));
+        btn.classList.add("active");
+        updateSummary();
+      }));
+
+      // --- CALENDAR NAVIGATION ---
+      calendarPrev?.addEventListener("click", () => {
+        selectedDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth() - 1, Math.min(selectedDate.getDate(), 28));
+        updateSummary();
+      });
+      calendarNext?.addEventListener("click", () => {
+        selectedDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, Math.min(selectedDate.getDate(), 28));
+        updateSummary();
+      });
+
+      // --- CONFIRM BOOKING BUTTON ---
+      confirmBtn?.addEventListener("click", async () => {
+        if (requestSaved) return toast("Booking already confirmed");
+        confirmed = true;
+        requestSaved = true;
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = "Booking Confirmed";
+        if (chatInput) chatInput.disabled = false;
+        if (chatWindow) chatWindow.textContent = "Booking confirmed. You can now send a message to your mentor.";
+        try {
+          await saveCounsellingRequest();
+        } catch (err) {
+          requestSaved = false;
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = "Confirm Booking";
+          toast(err.message);
+        }
+      });
+
+      // --- CHAT EVENTS ---
+      chatSend?.addEventListener("click", () => {
+        if (!confirmed) return toast("Confirm your booking first");
+        const text = (chatInput?.value || "").trim();
+        if (!text) return toast("Type a message first");
+        if (chatWindow) {
+          const line = document.createElement("div");
+          line.className = "chat-message";
+          line.textContent = `You: ${text}`;
+          if (!chatWindow.querySelector(".chat-message")) chatWindow.textContent = "";
+          chatWindow.appendChild(line);
+        }
+        chatInput.value = "";
+        toast("Message added");
+      });
+      chatInput?.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") chatSend?.click();
+      });
+
+      // --- INITIAL RENDER ---
+      updateSummary();
+      // Fetch mentors and their availability from the backend
+      fetchJSON(`${API}/availability/mentors_with_availability.php`)
+        .then(rows => {
+          // Debug log for backend response
+          console.log('[DEBUG] mentors_with_availability.php response:', rows);
+          if (Array.isArray(rows) && rows.length) {
+            renderMentors(rows);
+            updateSummary();
+          } else {
+            console.warn('[DEBUG] No mentors found in API response:', rows);
+          }
+        })
+        .catch((err)=>{
+          console.error('[DEBUG] Error fetching mentors_with_availability.php:', err);
+        });
+    }).catch(err=>toast(err.message));
+  }
+
+  if(PAGE==="medical-support"){
+    ensureAuth().then((u)=>{
+      const appointmentItems = $$("[data-appointment-card]");
+      const slotButtons = $$("[data-slot]");
+      const calendarTitle = $(".calendar-head span");
+      const calendarGrid = $(".calendar-grid");
+      const calendarPrev = $("[data-calendar-prev]");
+      const calendarNext = $("[data-calendar-next]");
+      const summary = $("[data-medical-summary]");
+      const bookBtn = $("[data-review-medical]");
+      const confirmBtn = $("[data-confirm-medical]");
+      let selectedDate = new Date(2026, 9, 15);
+      let requestSaved = false;
+
+      const activeText = (items, fallback) => {
+        const active = items.find(item => item.classList.contains("active"));
+        return active?.querySelector("h4")?.textContent?.trim() || active?.textContent?.trim() || fallback;
+      };
+      const formatDate = (d) => d.toLocaleDateString(undefined, { month:"short", day:"numeric", year:"numeric" });
+      const updateSummary = () => {
+        if (!summary) return;
+        summary.innerHTML = `
+          <p><strong>Location:</strong> University Medical Center (Building D)</p>
+          <p><strong>Date:</strong> ${formatDate(selectedDate)}</p>
+          <p><strong>Time:</strong> ${activeText(slotButtons, "Selected time")}</p>
+          <p><strong>Type:</strong> ${activeText(appointmentItems, "Selected appointment")}</p>
+          <p><strong>Email:</strong> ${u.email || "Your account email"}</p>
+        `;
+        renderBookingCalendar(calendarGrid, calendarTitle, selectedDate, (date) => {
+          selectedDate = date;
+          updateSummary();
+        });
+      };
+      const saveMedicalRequest = async () => {
+        await fetchJSON(`${API}/resource/create_request.php`, {
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({
+            request_type: "medical",
+            requester_email: u.email || ""
+          })
+        });
+        toast("Medical support request saved");
+      };
+
+      appointmentItems.forEach(item => item.addEventListener("click", () => {
+        appointmentItems.forEach(x => x.classList.remove("active"));
+        item.classList.add("active");
+        updateSummary();
+      }));
+      appointmentItems.forEach(item => item.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          item.click();
+        }
+      }));
+      slotButtons.forEach(btn => btn.addEventListener("click", () => {
+        slotButtons.forEach(x => x.classList.remove("active"));
+        btn.classList.add("active");
+        updateSummary();
+      }));
+      calendarPrev?.addEventListener("click", () => {
+        selectedDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth() - 1, Math.min(selectedDate.getDate(), 28));
+        updateSummary();
+      });
+      calendarNext?.addEventListener("click", () => {
+        selectedDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, Math.min(selectedDate.getDate(), 28));
+        updateSummary();
+      });
+      bookBtn?.addEventListener("click", () => {
+        summary?.scrollIntoView({ behavior:"smooth", block:"center" });
+        toast("Review your medical slot");
+      });
+      confirmBtn?.addEventListener("click", async () => {
+        if (requestSaved) return toast("Medical slot already confirmed");
+        requestSaved = true;
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = "Medical Slot Confirmed";
+        try {
+          await saveMedicalRequest();
+        } catch (err) {
+          requestSaved = false;
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = "Confirm Medical Slot";
+          toast(err.message);
+        }
+      });
+      updateSummary();
+    }).catch(err=>toast(err.message));
+  }
+
+  if(PAGE==="lecturer" || (PAGE === "wall" && document.querySelector("#lecturerSection"))){
+    (async ()=>{
+      const dateInput = $("#availabilityDate");
+      const startInput = $("#availabilityStart");
+      const endInput = $("#availabilityEnd");
+      const noteInput = $("#availabilityNote");
+      const saveBtn = $("#availabilitySaveBtn");
+      const list = $("#availabilityList");
+      const empty = $("#availabilityEmpty");
+      const status = $("#availabilityStatus");
+
+      const setStatus = (message, kind = "info") => {
+        if (!status) return;
+        status.textContent = message || "";
+        status.dataset.kind = kind;
+        status.classList.toggle("hidden", !message);
+      };
+
+      const disableForm = (message) => {
+        [dateInput, startInput, endInput, noteInput].forEach(el => {
+          if (el) el.disabled = true;
+        });
+        if (saveBtn) {
+          saveBtn.disabled = true;
+          if (message) saveBtn.textContent = message;
+        }
+        if (empty && message) {
+          empty.textContent = message;
+          empty.classList.remove("hidden");
+        }
+        if (message) setStatus(message, "error");
+      };
+
+      let me = null;
+      try {
+        me = await fetchJSON(`${API}/auth/me.php`);
+      } catch {
+        disableForm("Please sign in as a lecturer to manage availability.");
+        return;
+      }
+
+      if (!["lecturer", "admin"].includes(me.role)) {
+        disableForm("Access restricted to lecturers and admins.");
+        return;
+      }
+
+      const today = new Date();
+      if (dateInput) dateInput.value = today.toISOString().slice(0, 10);
+      if (startInput) startInput.value = "09:00";
+      if (endInput) endInput.value = "10:00";
+
+      const render = (rows=[]) => {
+        if (!list) return;
+        list.innerHTML = rows.map(row => `
+          <article class="availability-card" data-availability-id="${row.id}">
+            <div>
+              <strong>${fmtDate(row.available_date)}</strong>
+              <span>${slotLabel(row)}</span>
+              ${row.note ? `<small>${esc(row.note)}</small>` : ""}
+            </div>
+            <button class="page-nav-btn" type="button" data-delete-availability="${row.id}">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </article>
+        `).join("");
+        empty?.classList.toggle("hidden", rows.length > 0);
+      };
+
+      const load = async () => {
+        try {
+          const rows = await fetchJSON(`${API}/availability/list.php?mine=1`);
+          render(Array.isArray(rows) ? rows : []);
+        } catch (err) {
+          setStatus(err.message || "Failed to load availability", "error");
+        }
+      };
+
+      saveBtn?.addEventListener("click", async () => {
+        if (!dateInput?.value || !startInput?.value || !endInput?.value) {
+          setStatus("Please complete date and time fields", "error");
+          toast("Please complete date and time fields");
+          return;
+        }
+        if (startInput.value >= endInput.value) {
+          setStatus("End time must be later than start time", "error");
+          toast("End time must be later than start time");
+          return;
+        }
+
+        const originalLabel = saveBtn.textContent;
+        saveBtn.disabled = true;
+        saveBtn.textContent = "Saving...";
+        try {
+          await fetchJSON(`${API}/availability/save.php`, {
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body: JSON.stringify({
+              available_date: dateInput.value,
+              start_time: startInput.value,
+              end_time: endInput.value,
+              note: noteInput.value.trim()
+            })
+          });
+          noteInput.value = "";
+          await load();
+          setStatus("Availability saved", "success");
+          toast("Availability saved");
+        } catch (err) {
+          setStatus(err.message || "Failed to save slot", "error");
+          toast(err.message || "Failed to save slot");
+        } finally {
+          saveBtn.disabled = false;
+          saveBtn.textContent = originalLabel;
+        }
+      });
+
+      list?.addEventListener("click", async (e) => {
+        const btn = e.target.closest("[data-delete-availability]");
+        if (!btn) return;
+        const confirmed = window.confirm("Delete this availability slot?");
+        if (!confirmed) return;
+
+        btn.disabled = true;
+        try {
+          await fetchJSON(`${API}/availability/delete.php`, {
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body: JSON.stringify({ id: Number(btn.dataset.deleteAvailability) })
+          });
+          await load();
+          setStatus("Availability removed", "success");
+          toast("Availability removed");
+        } catch (err) {
+          setStatus(err.message || "Failed to delete slot", "error");
+          toast(err.message || "Failed to delete slot");
+        } finally {
+          btn.disabled = false;
+        }
+      });
+
+      document.querySelectorAll(".lecturer-alerts .post-btn").forEach(btn => {
+        btn.addEventListener("click", () => toast("Alerts queue coming soon"));
+      });
+
+      document.querySelectorAll(".action-card").forEach(btn => {
+        btn.addEventListener("click", () => toast("Action queued"));
+      });
+
+      await load();
+    })().catch(err=>toast(err.message));
   }
 })();

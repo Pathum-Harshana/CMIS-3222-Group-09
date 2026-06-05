@@ -22,14 +22,18 @@ try {
     $row = $check->fetch();
     if (!$row) jsonResponse(false, "Comment not found", null, 404);
 
-    if ($user["role"] !== "admin" && (int)$row["user_id"] !== (int)$user["id"]) {
-        jsonResponse(false, "Forbidden", null, 403);
+    // Only admins can delete comments (prevents "own self" moderation).
+    if ($user["role"] !== "admin") {
+        jsonResponse(false, "Forbidden: admin only", null, 403);
     }
+
 
     $stmt = $pdo->prepare("DELETE FROM comments WHERE id=:id LIMIT 1");
     $stmt->execute([":id"=>$id]);
 
     jsonResponse(true, "Comment permanently deleted", ["id"=>$id]);
+
 } catch (Throwable $e) {
     jsonResponse(false, "Failed to delete comment", ["error"=>$e->getMessage()], 500);
 }
+

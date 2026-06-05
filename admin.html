@@ -6,7 +6,7 @@
   <title>AuraHub Admin Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="auth.css?v=admin-pro-2" />
+  <link rel="stylesheet" href="/Aurahub/auth.css?v=ui-polish-1" />
 </head>
 <body>
   <div class="video-bg" aria-hidden="true"></div>
@@ -39,6 +39,16 @@
         <div id="adminStatsCards" class="stats-grid"></div>
 
         <div class="dash-block">
+          <h4>Users & Roles</h4>
+          <div id="adminUsers"></div>
+        </div>
+
+        <div class="dash-block">
+          <h4>Mentor Availability</h4>
+          <div id="adminAvailability"></div>
+        </div>
+
+        <div class="dash-block">
           <h4>Resource Requests</h4>
           <div id="adminResourceRequests"></div>
         </div>
@@ -57,6 +67,12 @@
       <p id="adminMsg" class="msg"></p>
     </section>
   </main>
-  <script src="admin.js?v=admin-pro-2"></script>
+  <script src="/Aurahub/admin.js?v=ui-polish-2"></script>
+  <script>
+    if (!window.__adminLoaded) {
+      const el = document.getElementById("adminMsg");
+      if (el) el.textContent = "Admin script failed to load. Please refresh or check /Aurahub/admin.js";
+    }
+  </script>
 </body>
 </html>

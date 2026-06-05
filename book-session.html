@@ -1,19 +1,36 @@
+<!--
+  Book a Session Page
+  - Lets users select a mentor, pick a date/time, and book a session.
+  - Mentor and slot lists are rendered dynamically by app.js.
+-->
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AuraHub - Book a Session</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-<link rel="stylesheet" href="style.css?v=book-session-1"></head>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AuraHub - Book a Session</title>
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="style.css?v=ui-polish-1">
+</head>
 <body data-page="book-session">
 <div class="app">
-  <aside class="sidebar"><div class="brand"><div class="brand-icon"></div><h1>AuraHub<span>.</span></h1></div>
+  <!-- Sidebar navigation -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-icon"></div>
+      <h1>AuraHub<span>.</span></h1>
+    </div>
     <nav class="sidebar-nav">
       <a class="nav-btn" href="wall.html"><i class="fa-solid fa-house"></i><span>Safe-Base Wall</span></a>
       <a class="nav-btn" href="mood.html"><i class="fa-solid fa-chart-pie"></i><span>Mood Trends</span></a>
       <a class="nav-btn" href="talent.html"><i class="fa-solid fa-user-group"></i><span>Talent Exchange</span></a>
       <a class="nav-btn" href="resource.html"><i class="fa-solid fa-book-medical"></i><span>Resource Hub</span></a>
-      <a class="nav-btn active" href="book-session.html"><i class="fa-solid fa-calendar-check"></i><span>Book a Session</span></a>
-      <a class="nav-btn" href="medical-support.html"><i class="fa-solid fa-truck-medical"></i><span>Medical Support</span></a>
-      <button id="logoutBtn" class="nav-btn nav-logout" type="button">
+      <a class="nav-btn hidden" href="wall.html#lecturer" data-role="lecturer"><i class="fa-solid fa-calendar-check"></i><span>Mentor Availability</span></a>
+      
+      
+      
+      <button id="logoutBtn" class="nav-btn nav-logout" type="button" data-logout>
         <i class="fa-solid fa-arrow-right-from-bracket"></i><span>Sign Out</span>
       </button>
     </nav>
@@ -24,49 +41,40 @@
       <h2 class="page-title">Book a Session</h2>
       <p class="small-label">CONNECT WITH A MENTOR • SELECT A DATE • FIND YOUR TIME</p>
 
-      <div class="support-grid" style="display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:12px;align-items:start;">
-        <!-- LEFT: Mentor Selection -->
-        <article class="ui-card support-panel">
+      <div class="booking-hero ui-card">
+        <div class="booking-hero-copy">
+          <span class="booking-hero-tag">Guided booking</span>
+          <h3>Choose a mentor, pick a slot, and confirm in a few steps.</h3>
+          <p>Available mentors and open times update automatically, so the page always reflects the latest schedule.</p>
+        </div>
+        <div class="booking-hero-steps" aria-label="Booking steps">
+          <span><strong>1</strong> Mentor</span>
+          <span><strong>2</strong> Date</span>
+          <span><strong>3</strong> Time</span>
+          <span><strong>4</strong> Confirm</span>
+        </div>
+      </div>
+
+      <div class="support-grid">
+        <!-- LEFT: Mentor Selection (rendered by JS) -->
+        <article class="ui-card support-panel mentor-panel">
           <h3>Select Your Mentor</h3>
-          <div class="support-list">
-            <div class="support-item active">
-              <div class="mentor-avatar"></div>
-              <div>
-                <h4>Dr. Evelyn Reed</h4>
-                <p>Wellbeing Specialist</p>
-                <small>Focus: Stress, Mindfulness.</small>
-              </div>
-              <span class="badge-check"><i class="fa-solid fa-check"></i></span>
-            </div>
-            <div class="support-item">
-              <div class="mentor-avatar"></div>
-              <div>
-                <h4>Prof. Alex Chen</h4>
-                <p>Skill & Career Guide</p>
-                <small>Focus: Resume building, Technical skills.</small>
-              </div>
-            </div>
-            <div class="support-item">
-              <div class="mentor-avatar"></div>
-              <div>
-                <h4>Maya Gupta</h4>
-                <p>Emotional Support Counsellor</p>
-                <small>Focus: Anxiety, Peer pressure.</small>
-              </div>
-            </div>
-          </div>
+          <!-- Mentor cards will be rendered here dynamically -->
+          <div class="support-list mentor-list-empty"></div>
+          <div class="no-mentors-message" style="display:none;color:#c00;margin:10px 0;">No mentors with available slots found.</div>
         </article>
 
-        <!-- MIDDLE: Dates + Times -->
-        <article class="ui-card support-panel">
+        <!-- MIDDLE: Dates + Times (rendered by JS) -->
+        <article class="ui-card support-panel calendar-panel">
           <h3>Available Dates & Times</h3>
           <div class="calendar-card">
             <div class="calendar-head">
-              <button class="icon-btn"><i class="fa-solid fa-chevron-left"></i></button>
+              <button class="icon-btn" type="button" data-calendar-prev><i class="fa-solid fa-chevron-left"></i></button>
               <span>Oct 15, 2026</span>
-              <button class="icon-btn"><i class="fa-solid fa-chevron-right"></i></button>
+              <button class="icon-btn" type="button" data-calendar-next><i class="fa-solid fa-chevron-right"></i></button>
             </div>
             <div class="calendar-grid">
+              <!-- Calendar days rendered by JS -->
               <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
               <span>29</span><span>30</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
               <span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span>
@@ -75,56 +83,58 @@
               <span>27</span><span>28</span><span>29</span><span>30</span><span>31</span><span>1</span><span>2</span>
             </div>
           </div>
-          <div class="slot-list">
-            <button class="slot-btn">10:00 AM - 10:45 AM</button>
-            <button class="slot-btn active">1:00 PM - 1:45 PM</button>
-            <button class="slot-btn">4:00 PM - 4:45 PM</button>
-          </div>
+          <!-- Time slots will be rendered here dynamically -->
+          <div class="slot-list slot-list-empty"></div>
+          <div class="no-slots-message" style="display:none;color:#c00;margin:10px 0;">No available slots for this mentor.</div>
         </article>
 
-        <!-- RIGHT: Summary + Chat -->
-        <article class="ui-card support-panel">
+        <!-- RIGHT: Summary + Chat (rendered by JS) -->
+        <article class="ui-card support-panel summary-panel">
           <h3>Session Summary & Chat</h3>
-          <div class="summary-box">
+          <div class="summary-box" data-session-summary>
+            <!-- Summary is rendered by JS -->
             <p><strong>Mentor:</strong> Dr. Evelyn Reed</p>
             <p><strong>Date:</strong> Oct 15, 2026</p>
             <p><strong>Time:</strong> 1:00 PM - 1:45 PM</p>
           </div>
-          <button class="post-btn">Confirm Booking</button>
+          <button class="post-btn" type="button" data-confirm-booking>Confirm Booking</button>
 
           <div class="chat-box">
             <h4>Session Chat</h4>
             <p>Chat with Dr. Reed (After Booking)</p>
-            <div class="chat-window">Book your session to start chatting with Dr. Reed.</div>
+            <div class="chat-window" data-chat-window>Book your session to start chatting with Dr. Reed.</div>
             <div class="chat-input">
-              <input type="text" placeholder="Type your message..." />
-              <button><i class="fa-solid fa-paper-plane"></i></button>
+              <input type="text" placeholder="Type your message..." data-chat-input disabled />
+              <button type="button" data-chat-send><i class="fa-solid fa-paper-plane"></i></button>
             </div>
           </div>
         </article>
       </div>
 
+      <!-- Navigation buttons -->
       <div class="page-next mt-4">
         <a class="page-prev-link" href="resource.html" aria-label="Go to Resource Hub">
           <i class="fa-solid fa-circle-arrow-left"></i> Prev page
-        </a>
-        <a class="page-next-link" href="medical-support.html" aria-label="Go to Medical Support">
-          Next page <i class="fa-solid fa-circle-arrow-right"></i>
         </a>
       </div>
     </section>
   </main>
 </div>
 
+<!-- Mobile navigation -->
 <nav class="mobile-nav">
   <a class="nav-btn" href="wall.html"><i class="fa-solid fa-house"></i></a>
   <a class="nav-btn" href="mood.html"><i class="fa-solid fa-chart-pie"></i></a>
   <a class="nav-btn" href="talent.html"><i class="fa-solid fa-user-group"></i></a>
   <a class="nav-btn" href="resource.html"><i class="fa-solid fa-book-medical"></i></a>
-  <button id="logoutBtn" class="nav-btn nav-logout" type="button" aria-label="Sign Out">
+  <a class="nav-btn hidden" href="wall.html#lecturer" data-role="lecturer" aria-label="Mentor Availability"><i class="fa-solid fa-calendar-check"></i></a>
+  <button class="nav-btn nav-logout" type="button" data-logout aria-label="Sign Out">
     <i class="fa-solid fa-arrow-right-from-bracket"></i>
   </button>
 </nav>
 
 <div id="toastContainer" class="toast-container"></div>
-</body></html>
+<!-- Main JS logic for booking page -->
+<script src="app.js?v=ui-polish-1"></script>
+</body>
+</html>

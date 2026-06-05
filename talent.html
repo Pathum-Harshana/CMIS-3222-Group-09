@@ -2,7 +2,7 @@
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AuraHub - Talent Exchange</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-<link rel="stylesheet" href="style.css?v=talent-2"></head>
+<link rel="stylesheet" href="style.css?v=ui-polish-2"></head>
 <body data-page="talent">
   
 <div class="app">
@@ -12,9 +12,10 @@
       <a class="nav-btn" href="mood.html"><i class="fa-solid fa-chart-pie"></i><span>Mood Trends</span></a>
       <a class="nav-btn active" href="talent.html"><i class="fa-solid fa-user-group"></i><span>Talent Exchange</span></a>
       <a class="nav-btn" href="resource.html"><i class="fa-solid fa-book-medical"></i><span>Resource Hub</span></a>
+      <a class="nav-btn hidden" href="wall.html#lecturer" data-role="lecturer"><i class="fa-solid fa-calendar-check"></i><span>Mentor Availability</span></a>
 
       <!-- UPDATED: Sign Out placed after Resource Hub -->
-      <button id="logoutBtn" class="nav-btn nav-logout">
+      <button id="logoutBtn" class="nav-btn nav-logout" type="button" data-logout>
         <i class="fa-solid fa-arrow-right-from-bracket"></i><span>Sign Out</span>
       </button>
       <!-- UPDATED: End Sign Out -->
@@ -94,8 +95,12 @@
   <a class="nav-btn" href="mood.html"><i class="fa-solid fa-chart-pie"></i></a>
   <a class="nav-btn active" href="talent.html"><i class="fa-solid fa-user-group"></i></a>
   <a class="nav-btn" href="resource.html"><i class="fa-solid fa-book-medical"></i></a>
+  <a class="nav-btn hidden" href="wall.html#lecturer" data-role="lecturer" aria-label="Mentor Availability"><i class="fa-solid fa-calendar-check"></i></a>
+  <button class="nav-btn nav-logout" type="button" data-logout aria-label="Sign Out">
+    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+  </button>
 </nav>
 
 <div id="toastContainer" class="toast-container"></div>
-<script src="app.js?v=talent-3"></script>
+<script src="app.js?v=ui-polish-1"></script>
 </body></html>

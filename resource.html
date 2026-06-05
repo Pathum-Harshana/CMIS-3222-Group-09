@@ -2,7 +2,7 @@
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AuraHub - Resource Hub</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-<link rel="stylesheet" href="style.css?v=resource-4"></head>
+<link rel="stylesheet" href="style.css?v=ui-polish-1"></head>
 <body data-page="resource">
   
 <div class="app">
@@ -12,11 +12,10 @@
       <a class="nav-btn" href="mood.html"><i class="fa-solid fa-chart-pie"></i><span>Mood Trends</span></a>
       <a class="nav-btn" href="talent.html"><i class="fa-solid fa-user-group"></i><span>Talent Exchange</span></a>
       <a class="nav-btn active" href="resource.html"><i class="fa-solid fa-book-medical"></i><span>Resource Hub</span></a>
+      <a class="nav-btn hidden" href="wall.html#lecturer" data-role="lecturer"><i class="fa-solid fa-calendar-check"></i><span>Mentor Availability</span></a>
 
-      <a class="nav-btn sub-nav" href="#book-session"><i class="fa-solid fa-calendar-check"></i><span>Book a session</span></a>
-      <a class="nav-btn sub-nav" href="#medical-support"><i class="fa-solid fa-truck-medical"></i><span>Medical support</span></a>
-
-      <button id="logoutBtn" class="nav-btn nav-logout">
+      
+      <button id="logoutBtn" class="nav-btn nav-logout" type="button" data-logout>
         <i class="fa-solid fa-arrow-right-from-bracket"></i><span>Sign Out</span>
       </button>
     </nav>
@@ -28,9 +27,9 @@
       <p class="small-label">GET HELP FAST • LEARN CONTINUOUSLY • STAY WELL</p>
 
       <!-- New two-column layout to match the image -->
-      <div class="resource-layout" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;">
+      <div class="resource-layout">
         <!-- LEFT: Support Cards -->
-        <div class="resource-left" style="display:grid;gap:12px;">
+        <div class="resource-left">
           <article id="book-session" class="ui-card resource-card">
             <div class="resource-icon"><i class="fa-solid fa-user-doctor"></i></div>
             <h3>Counselling Support</h3>
@@ -66,9 +65,11 @@
             <h3>Recommended Learning & Wellbeing Articles</h3>
           </div>
 
-          <div class="article-list">
+            <div class="article-list">
+
             <a class="article-item" href="https://www.nimh.nih.gov/health/topics/caring-for-your-mental-health" target="_blank" rel="noopener noreferrer">
               <i class="fa-solid fa-brain"></i>
+
               <div>
                 <h4>Caring for Your Mental Health (NIMH)</h4>
                 <p>Trusted guidance for maintaining emotional wellness and getting help when needed.</p>
@@ -111,6 +112,134 @@
               </div>
               <span><i class="fa-solid fa-up-right-from-square"></i></span>
             </a>
+
+            <a class="article-item" href="https://www.verywellmind.com/top-school-stress-relievers-for-students-3145179" target="_blank" rel="noopener noreferrer">
+              <i class="fa-solid fa-leaf"></i>
+              <div>
+                <h4>How to Manage Stress as a Student (Verywell Mind)</h4>
+                <p>Practical tips for handling academic stress and pressure.</p>
+              </div>
+              <span><i class="fa-solid fa-up-right-from-square"></i></span>
+            </a>
+            <a class="article-item" href="https://www.coursera.org/learn/the-science-of-well-being" target="_blank" rel="noopener noreferrer">
+              <i class="fa-solid fa-heart"></i>
+              <div>
+                <h4>The Science of Well-Being (Yale Open Course)</h4>
+                <p>Yale's most popular course on happiness and wellbeing, free online.</p>
+              </div>
+              <span><i class="fa-solid fa-up-right-from-square"></i></span>
+            </a>
+            <a class="article-item" href="https://www.harvard.edu/in-focus/10-tips-for-effective-online-learning/" target="_blank" rel="noopener noreferrer">
+              <i class="fa-solid fa-graduation-cap"></i>
+              <div>
+                <h4>10 Tips for Effective Online Learning (Harvard)</h4>
+                <p>Expert advice for thriving in online and hybrid learning environments.</p>
+              </div>
+              <span><i class="fa-solid fa-up-right-from-square"></i></span>
+            </a>
+            <a class="article-item" href="https://www.apa.org/topics/resilience" target="_blank" rel="noopener noreferrer">
+              <i class="fa-solid fa-seedling"></i>
+              <div>
+                <h4>Building Resilience: Skills to Thrive (APA)</h4>
+                <p>Learn how to bounce back from setbacks and build emotional strength.</p>
+              </div>
+              <span><i class="fa-solid fa-up-right-from-square"></i></span>
+            </a>
+            <a class="article-item" href="https://www.mindful.org/mindfulness-for-students/" target="_blank" rel="noopener noreferrer">
+              <i class="fa-solid fa-spa"></i>
+              <div>
+                <h4>Mindfulness for Students (Mindful.org)</h4>
+                <p>Simple mindfulness practices to help you focus and reduce anxiety.</p>
+              </div>
+              <span><i class="fa-solid fa-up-right-from-square"></i></span>
+            </a>
+            <a class="article-item" href="https://www.oxfordlearning.com/how-to-get-motivated-to-study/" target="_blank" rel="noopener noreferrer">
+              <i class="fa-solid fa-bolt"></i>
+              <div>
+                <h4>How to Get Motivated to Study (Oxford Learning)</h4>
+                <p>Strategies to boost your motivation and stay on track with your studies.</p>
+              </div>
+              <span><i class="fa-solid fa-up-right-from-square"></i></span>
+            </a>
+            <a class="article-item" href="https://www.edutopia.org/article/healthy-habits-academic-success" target="_blank" rel="noopener noreferrer">
+              <i class="fa-solid fa-apple-whole"></i>
+              <div>
+                <h4>Healthy Habits for Academic Success (Edutopia)</h4>
+                <p>Tips for building routines that support your learning and wellbeing.</p>
+              </div>
+              <span><i class="fa-solid fa-up-right-from-square"></i></span>
+            </a>
+            <!-- Videos Section -->
+            <div class="section-head" style="margin-top:2em;">
+              <h3>Recommended Videos</h3>
+            </div>
+
+            <div class="video-row">
+
+              <div class="article-item video-item" style="display:block; padding:12px;">
+              <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                <i class="fa-brands fa-youtube"></i>
+                <div>
+                  <h4 style="margin:0;">The Habits of Successful Students (Thomas Frank)</h4>
+                  <p style="margin:4px 0 0;">Learn daily routines used by top-performing students.</p>
+                </div>
+              </div>
+              <div class="video-frame" style="position:relative; padding-top:56.25%; border-radius:10px; overflow:hidden;">
+                <iframe src="https://www.youtube.com/embed/1xeHh5DnCIw" title="YouTube video player" frameborder="0" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="position:absolute; top:0; left:0; width:100%; height:100%; border:0;"></iframe>
+              </div>
+            </div>
+
+            <div class="article-item" style="display:block; padding:12px;">
+              <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                <i class="fa-brands fa-youtube"></i>
+                <div>
+                  <h4 style="margin:0;">Evidence-based Revision Tips (Ali Abdaal)</h4>
+                  <p style="margin:4px 0 0;">Practical, research-backed exam preparation methods.</p>
+                </div>
+              </div>
+              <div class="video-frame" style="position:relative; padding-top:56.25%; border-radius:10px; overflow:hidden;">
+                <iframe src="https://www.youtube.com/embed/ukLnPbIffxE" title="YouTube video player" frameborder="0" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="position:absolute; top:0; left:0; width:100%; height:100%; border:0;"></iframe>
+              </div>
+            </div>
+
+            <div class="article-item" style="display:block; padding:12px;">
+              <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                <i class="fa-brands fa-youtube"></i>
+                <div>
+                  <h4 style="margin:0;">How to Practice Mindfulness (Headspace)</h4>
+                  <p style="margin:4px 0 0;">Simple guided mindfulness for beginners.</p>
+                </div>
+              </div>
+              <div class="video-frame" style="position:relative; padding-top:56.25%; border-radius:10px; overflow:hidden;">
+                <iframe src="https://www.youtube.com/embed/inpok4MKVLM" title="YouTube video player" frameborder="0" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="position:absolute; top:0; left:0; width:100%; height:100%; border:0;"></iframe>
+              </div>
+            </div>
+
+            <div class="article-item" style="display:block; padding:12px;">
+              <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                <i class="fa-brands fa-youtube"></i>
+                <div>
+                  <h4 style="margin:0;">How to Manage Stress (Kati Morton)</h4>
+                  <p style="margin:4px 0 0;">Practical ways to cope with stress and anxiety.</p>
+                </div>
+              </div>
+              <div class="video-frame" style="position:relative; padding-top:56.25%; border-radius:10px; overflow:hidden;">
+                <iframe src="https://www.youtube.com/embed/hnpQrMqDoqE" title="YouTube video player" frameborder="0" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="position:absolute; top:0; left:0; width:100%; height:100%; border:0;"></iframe>
+              </div>
+            </div>
+
+            <div class="article-item" style="display:block; padding:12px;">
+              <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                <i class="fa-brands fa-youtube"></i>
+                <div>
+                  <h4 style="margin:0;">Building Resilience (Psych Hub)</h4>
+                  <p style="margin:4px 0 0;">Short video about coping and bouncing back.</p>
+                </div>
+              </div>
+              <div class="video-frame" style="position:relative; padding-top:56.25%; border-radius:10px; overflow:hidden;">
+                <iframe src="https://www.youtube.com/embed/4q1dgn_C0AU" title="YouTube video player" frameborder="0" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="position:absolute; top:0; left:0; width:100%; height:100%; border:0;"></iframe>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -133,7 +262,8 @@
   <a class="nav-btn" href="mood.html"><i class="fa-solid fa-chart-pie"></i></a>
   <a class="nav-btn" href="talent.html"><i class="fa-solid fa-user-group"></i></a>
   <a class="nav-btn active" href="resource.html"><i class="fa-solid fa-book-medical"></i></a>
-  <button id="logoutBtn" class="nav-btn nav-logout" type="button" aria-label="Sign Out">
+  <a class="nav-btn hidden" href="wall.html#lecturer" data-role="lecturer" aria-label="Mentor Availability"><i class="fa-solid fa-calendar-check"></i></a>
+  <button class="nav-btn nav-logout" type="button" data-logout aria-label="Sign Out">
     <i class="fa-solid fa-arrow-right-from-bracket"></i>
   </button>
 </nav>
@@ -153,5 +283,5 @@
   </div>
 </div>
 
-<script src="app.js?v=resource-5"></script>
+<script src="app.js?v=ui-polish-1"></script>
 </body></html>

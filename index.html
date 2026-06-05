@@ -7,7 +7,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <link rel="stylesheet" href="auth.css?v=auth-theme-2" />
+
+  <!-- UPDATED -->
+  <link rel="stylesheet" href="auth.css?v=ui-polish-1" />
 </head>
 <body>
   <main class="auth-shell">
@@ -26,7 +28,7 @@
         <label>Password</label>
         <input id="loginPassword" type="password" placeholder="Enter your password" required />
         <button class="btn primary" type="submit"><i class="fa-solid fa-right-to-bracket"></i> Sign In</button>
-        <button id="gotoAdmin" class="btn ghost" type="button"><i class="fa-solid fa-user-shield"></i> Admin Login</button>
+
       </form>
 
       <form id="signupForm" class="form">
@@ -34,6 +36,9 @@
         <input id="signupName" type="text" placeholder="Your full name" required />
         <label>Email Address</label>
         <input id="signupEmail" type="email" placeholder="you@example.com" required />
+        
+
+        </select>
         <label>Password (min 6 chars)</label>
         <input id="signupPassword" type="password" minlength="6" placeholder="Create a secure password" required />
         <button class="btn primary" type="submit"><i class="fa-solid fa-user-plus"></i> Create Account</button>
@@ -42,7 +47,16 @@
       <p id="authMsg" class="msg"></p>
     </section>
   </main>
-  <script src="auth.js?v=auth-theme-2"></script>
-  
+
+  <!-- UPDATED -->
+  <script src="auth.js?v=ui-polish-2"></script>
+
+  <script>
+    if (!window.__authLoaded) {
+      const el = document.getElementById("authMsg");
+      if (el) el.textContent = "Auth script failed to load. Please refresh or check auth.js";
+    }
+  </script>
+
 </body>
 </html>

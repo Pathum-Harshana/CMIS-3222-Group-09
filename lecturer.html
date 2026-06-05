@@ -1,25 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AuraHub - Safe-Base Wall</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AuraHub - Mentor Availability</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <link rel="stylesheet" href="style.css?v=ui-polish-2" />
 </head>
-<body data-page="wall">
+<body data-page="lecturer">
   <div class="aura-glow-1"></div><div class="aura-glow-2"></div>
   <div class="app">
     <aside class="sidebar">
       <div class="brand"><div class="brand-icon"></div><h1>AuraHub<span>.</span></h1></div>
       <nav class="sidebar-nav">
-        <a class="nav-btn active" href="#wall" data-view="wall"><i class="fa-solid fa-house"></i><span>Safe-Base Wall</span></a>
-        <a class="nav-btn" href="mood.html"><i class="fa-solid fa-chart-pie"></i><span>Mood Trends</span></a>
-        <a class="nav-btn" href="talent.html"><i class="fa-solid fa-user-group"></i><span>Talent Exchange</span></a>
+        <a class="nav-btn active" href="lecturer.html"><i class="fa-solid fa-calendar-check"></i><span>Availability</span></a>
         <a class="nav-btn" href="resource.html"><i class="fa-solid fa-book-medical"></i><span>Resource Hub</span></a>
-        <a class="nav-btn hidden" href="#lecturer" data-role="lecturer" data-view="lecturer"><i class="fa-solid fa-calendar-check"></i><span>Mentor Availability</span></a>
-
         <button id="logoutBtn" class="nav-btn nav-logout" type="button" data-logout>
           <i class="fa-solid fa-arrow-right-from-bracket"></i><span>Sign Out</span>
         </button>
@@ -27,81 +22,7 @@
     </aside>
 
     <main class="main">
-      <header class="topbar">
-        <label class="search-wrap"><i class="fa-solid fa-search"></i><input id="globalSearch" type="text" placeholder="Search posts..." /><button id="clearSearch" type="button"><i class="fa-solid fa-xmark"></i></button></label>
-        <button class="bell"><i class="fa-regular fa-bell"></i><span class="dot"></span></button>
-      </header>
-
-      <section id="wallSection" class="page active">
-        <div class="hero">
-          <div>
-            <h2>Welcome back. 👋</h2>
-            <p>This is your safe space. Take a deep breath.</p>
-          </div>
-          <span class="hero-badge"><i class="fa-solid fa-spa"></i> Safe Zone</span>
-        </div>
-
-        <p>Share your thoughts anonymously, support peers, and build a healthier student community.</p>
-
-        <div class="ui-card mood-panel">
-          <div class="mood-panel-head"><h3>How are you feeling now?</h3><small>Quick check-in</small></div>
-          <div class="mood-options">
-            <button class="mood-chip" data-mood="happy" type="button">😄 Happy</button>
-            <button class="mood-chip" data-mood="calm" type="button">🙂 Calm</button>
-            <button class="mood-chip" data-mood="neutral" type="button">😐 Neutral</button>
-            <button class="mood-chip" data-mood="anxious" type="button">😟 Anxious</button>
-            <button class="mood-chip" data-mood="stressed" type="button">😫 Stressed</button>
-          </div>
-          <p style="margin-top:8px;">Tip: Select a mood before posting to improve your mood analytics.</p>
-        </div>
-
-        <h3 class="small-label">LOG YOUR DAILY AURA</h3>
-        <div class="composer ui-card">
-          <div class="composer-head"><i class="fa-solid fa-user-secret"></i><textarea id="postInput" rows="3" maxlength="600" placeholder="Vent anonymously... without judgment."></textarea></div>
-          <div class="composer-foot"><span class="pill"><i class="fa-solid fa-lock"></i> 100% Anonymous</span><div><small id="charCount">0/600</small><button id="postBtn" class="post-btn">Post to Wall</button></div></div>
-        </div>
-
-        <section class="feed-wrap">
-          <h3>Community Feed</h3>
-          <div id="feed" class="feed"></div>
-          <div class="feed-pagination mt-3" aria-label="Feed pagination">
-            <button id="feedPrevBtn" class="page-nav-btn" type="button"><i class="fa-solid fa-chevron-left"></i> Prev</button>
-            <small id="feedPageInfo">Page 1 of 1</small>
-            <button id="feedNextBtn" class="page-nav-btn" type="button">Next <i class="fa-solid fa-chevron-right"></i></button>
-          </div>
-          <p id="feedEmpty" class="empty">No posts yet. Share your thoughts ✨</p>
-        </section>
-
-        <div class="ui-card stat" style="margin-top:10px;">
-          <h3>Community Guidelines</h3>
-          <ul>
-            <li>Be respectful and supportive in every message.</li>
-            <li>Avoid sharing personal identity details.</li>
-            <li>Report content that feels unsafe or harmful.</li>
-          </ul>
-        </div>
-
-        <div class="ui-card stat" style="margin-top:10px;">
-          <h3>Example Community Posts</h3>
-          <ul>
-            <li>“Today was stressful, but I completed one task and I’m proud of that.”</li>
-            <li>“I felt anxious before class, but talking to a friend helped me calm down.”</li>
-            <li>“Reminder: you are not behind — you are learning at your own pace.”</li>
-          </ul>
-          <p>No data available yet? Start by adding your first entry.</p>
-        </div>
-
-        <div class="page-next mt-4">
-          <a class="page-prev-link" href="medical-support.html" aria-label="Go to Medical Support">
-            <i class="fa-solid fa-circle-arrow-left"></i> Prev page
-          </a>
-          <a class="page-next-link" href="mood.html" aria-label="Go to Mood Trends">
-            Next page <i class="fa-solid fa-circle-arrow-right"></i>
-          </a>
-        </div>
-      </section>
-
-      <section id="lecturerSection" class="page lecturer-page hidden">
+      <section class="page active lecturer-page">
         <div class="section-head">
           <div>
             <h2 class="page-title">Mentor Availability</h2>
@@ -218,13 +139,14 @@
               <h3>Add Available Slot</h3>
               <span class="hero-badge"><i class="fa-solid fa-plus"></i> New</span>
             </div>
+            <p class="lecturer-helper">Tip: Add 2-3 slots each week to keep students on track.</p>
+            <p id="availabilityStatus" class="lecturer-status hidden" role="status"></p>
             <div class="lecturer-form-grid">
               <label>Date<input id="availabilityDate" type="date" /></label>
               <label>Start Time<input id="availabilityStart" type="time" /></label>
               <label>End Time<input id="availabilityEnd" type="time" /></label>
               <label class="wide">Note<input id="availabilityNote" type="text" maxlength="255" placeholder="Optional note for students" /></label>
             </div>
-            <p id="availabilityStatus" class="lecturer-status hidden" role="status"></p>
             <div class="lecturer-form-actions">
               <button id="availabilitySaveBtn" class="post-btn" type="button">Save Slot</button>
             </div>
@@ -244,21 +166,12 @@
   </div>
 
   <nav class="mobile-nav">
-
-    <a class="nav-btn active" href="#wall" data-view="wall"><i class="fa-solid fa-house"></i></a>
-    <a class="nav-btn" href="mood.html"><i class="fa-solid fa-chart-pie"></i></a>
-    <a class="nav-btn" href="talent.html"><i class="fa-solid fa-user-group"></i></a>
+    <a class="nav-btn active" href="lecturer.html"><i class="fa-solid fa-calendar-check"></i></a>
     <a class="nav-btn" href="resource.html"><i class="fa-solid fa-book-medical"></i></a>
-    <a class="nav-btn hidden" href="#lecturer" data-role="lecturer" data-view="lecturer" aria-label="Mentor Availability"><i class="fa-solid fa-calendar-check"></i></a>
     <button class="nav-btn nav-logout" type="button" data-logout aria-label="Sign Out">
       <i class="fa-solid fa-arrow-right-from-bracket"></i>
     </button>
   </nav>
-
-
-
-
-
 
   <div id="toastContainer" class="toast-container"></div>
   <script src="app.js?v=ui-polish-1"></script>
