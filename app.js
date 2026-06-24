@@ -1,16 +1,54 @@
 (() => {
-  const API = `${window.location.origin}/Aurahub/api`;
+  /*
+   * AuraHub main front-end script
+   * ------------------------------------------------------------
+   * Controls the student-facing pages: wall, mood trends, talent hub,
+   * booking sessions, medical support, and availability screens.
+   *
+   * Assignment note:
+   * - Shared helpers stay near the top.
+   * - Page-specific logic is grouped by document.body.dataset.page.
+   * - Backend endpoints are called through fetchJSON().
+   */
+
+  // Build API URL: API is always under /<base>/api where <base> is the subdirectory path of the application.
+  // We determine <base> by taking the current pathname and, if it ends with a file (like index.html), removing the filename.
+  let base = window.location.pathname;
+  if (/\.[a-zA-Z0-9]+$/.test(base)) {
+    base = base.substring(0, base.lastIndexOf("/"));
+  }
+  if (base.endsWith("/")) {
+    base = base.slice(0, -1);
+  }
+  const API = `${window.location.origin}${base}/api`;
   const PAGE = document.body.dataset.page || "";
   const POST_FLAG = "aurahub_local_post_flags";
   const COMMENT_FLAG = "aurahub_local_comment_flags";
   const MOOD_KEY = "aurahub_selected_mood";
 
+  // Small DOM and storage helpers used throughout the UI.
   const $ = (s,r=document)=>r.querySelector(s);
   const $$ = (s,r=document)=>[...r.querySelectorAll(s)];
   const esc = (s)=>String(s ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
   const jget = (k)=>{ try { return JSON.parse(localStorage.getItem(k)||"{}"); } catch { return {}; } };
   const jset = (k,v)=>localStorage.setItem(k, JSON.stringify(v));
-  const toast = (m)=>{ const c=$("#toastContainer"); if(!c) return; const d=document.createElement("div"); d.className="toast"; d.textContent=m; c.appendChild(d); setTimeout(()=>d.remove(),1800); };
+  // Toasts show non-blocking success/error/warning messages.
+  const toast = (m, type="info")=>{ const c=$("#toastContainer"); if(!c) return; const d=document.createElement("div"); d.className=`toast toast-${type}`; d.setAttribute("role","status"); d.setAttribute("aria-live","polite"); d.textContent=m; c.appendChild(d); setTimeout(()=>d.remove(),2400); };
+
+  // Prevent duplicate clicks while a network request is running.
+  const setBusy = (el, busy, label) => {
+    if (!el) return;
+    if (busy) {
+      el.dataset.originalText = el.textContent;
+      el.disabled = true;
+      el.classList.add("is-busy");
+      if (label) el.textContent = label;
+    } else {
+      el.disabled = false;
+      el.classList.remove("is-busy");
+      if (el.dataset.originalText) el.textContent = el.dataset.originalText;
+    }
+  };
 
   const setRoleVisibility = async () => {
     try {
@@ -28,11 +66,47 @@
 
   setRoleVisibility();
 
-  async function fetchJSON(url,opt={}){ const merged={ credentials:"include", ...opt }; const r=await fetch(url,merged); const j=await r.json(); if(!r.ok||!j.success) throw new Error(j.message||"Failed"); return j.data; }
+  // Keep users on the correct dashboard for their role.
+  (async () => {
+    try {
+      const me = await fetchJSON(`${API}/auth/me.php`);
+      const role = me?.role;
+      if (role === "lecturer" || role === "doctor") {
+        $$('a[href="resource.html"]').forEach(el => el.classList.add("hidden"));
+      }
+      const path = location.pathname.toLowerCase();
+      if (role === "lecturer" && !path.endsWith("lecturer.html")) {
+        location.href = "lecturer.html";
+      } else if (role === "doctor" && !path.endsWith("doctor-availability.html")) {
+        location.href = "doctor-availability.html";
+      }
+    } catch {
+      // Public pages can continue even when there is no logged-in user.
+    }
+  })();
+
+  // Shared API wrapper. Every PHP endpoint returns { success, message, data }.
+  async function fetchJSON(url,opt={}){
+    const merged={ credentials:"include", ...opt };
+    const r=await fetch(url,merged);
+    let j;
+    try {
+      j = await r.json();
+    } catch {
+      throw new Error("Server returned an unreadable response. Please refresh and try again.");
+    }
+    if(!r.ok||!j.success) throw new Error(j.message||"Request failed");
+    return j.data;
+  }
+  // Redirect guests away from pages that require login.
   async function ensureAuth(){ try{ return await fetchJSON(`${API}/auth/me.php`);}catch{ location.href="index.html"; throw new Error("Unauthorized"); } }
 
   window.AuraHubAuth = {
-    logout: async()=>{ await fetch(`${API}/auth/logout.php`,{method:"POST"}); location.href="index.html"; }
+    logout: async()=>{
+      $$("[data-logout]").forEach(btn => setBusy(btn, true, "Signing out"));
+      await fetch(`${API}/auth/logout.php`,{method:"POST"});
+      location.href="index.html";
+    }
   };
   $$("[data-logout]").forEach(btn => {
     btn.addEventListener("click", () => window.AuraHubAuth.logout());
@@ -57,6 +131,8 @@
       btn.type = "button";
       btn.className = active ? "active" : "";
       btn.textContent = String(day);
+      btn.setAttribute("aria-label", `Select ${new Date(selectedDate.getFullYear(), selectedDate.getMonth(), day).toLocaleDateString(undefined, { month:"long", day:"numeric", year:"numeric" })}`);
+      if (active) btn.setAttribute("aria-current", "date");
       btn.addEventListener("click", () => {
         onSelect(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), day));
       });
@@ -69,14 +145,62 @@
     return isNaN(d.getTime()) ? value : d.toLocaleDateString(undefined, { month:"short", day:"numeric", year:"numeric" });
   };
   const fmtTime = (value) => String(value || "").slice(0, 5);
-  const slotLabel = (slot) => `${fmtTime(slot.start_time)} - ${fmtTime(slot.end_time)}`;
 
+  // Booking helpers keep mentor and doctor slot buttons consistent.
+  const slotLabel = (slot) => `${fmtTime(slot.start_time)} - ${fmtTime(slot.end_time)}`;
+  const isSlotBooked = (slot) => Number(slot?.is_booked || slot?.booked || 0) === 1 || String(slot?.status || "").toLowerCase() === "booked";
+  const slotButtonHTML = (slot, idx, active) => {
+    const booked = isSlotBooked(slot);
+    const time = slotLabel(slot);
+    const date = fmtDate(slot.available_date);
+    return `<button class="slot-btn ${active ? "active" : ""} ${booked ? "is-booked" : ""}" type="button" data-slot data-slot-id="${slot.id}" data-slot-date="${slot.available_date}" data-slot-time="${time}" ${booked ? "disabled aria-disabled=\"true\"" : ""} aria-label="${booked ? "Booked slot" : "Select slot"} ${date} ${time}">
+      <span class="slot-status">${booked ? "Booked" : "Available"}</span>
+      <span class="slot-date">${date}</span>
+      <span class="slot-time">${time}</span>
+    </button>`;
+  };
+
+  const renderChatThread = (container, messages, currentUserId, emptyMessage = "No messages yet.") => {
+    if (!container) return;
+    if (!Array.isArray(messages) || !messages.length) {
+      container.innerHTML = `<div class="chat-empty">${esc(emptyMessage)}</div>`;
+      return;
+    }
+    container.innerHTML = messages.map(msg => {
+      const mine = Number(msg.sender_id) === Number(currentUserId);
+      const sender = mine ? "You" : (msg.full_name || "Student");
+      const time = msg.created_at ? new Date(msg.created_at).toLocaleTimeString(undefined, { hour:"2-digit", minute:"2-digit" }) : "";
+      return `<div class="chat-message ${mine ? "mine" : "theirs"}">
+        <div class="chat-meta"><strong>${esc(sender)}</strong><span>${esc(time)}</span></div>
+        <div>${esc(msg.message)}</div>
+      </div>`;
+    }).join("");
+    container.scrollTop = container.scrollHeight;
+  };
+
+  const sendChatMessage = (bookingId, message) => fetchJSON(`${API}/chat/send.php`, {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({ booking_id: bookingId, message })
+  });
+
+  const loadChatThread = (bookingId) => fetchJSON(`${API}/chat/list.php?booking_id=${encodeURIComponent(bookingId)}`);
+
+  /* -----------------------------------------------------------------------
+   * Community Wall
+   * -----------------------------------------------------------------------
+   * Students can post anonymously or with their username, select a mood,
+   * search posts, and comment on discussions.
+   */
   if(PAGE==="wall"){
     let posts=[], commentsByPost={}, openComments={}, openAllComments={};
     let selectedMood = localStorage.getItem(MOOD_KEY) || "";
+    let selectedVisibility = localStorage.getItem("POST_VISIBILITY_KEY") || "anonymous";
     let visiblePosts = null;
     const feed=$("#feed"), feedEmpty=$("#feedEmpty"), postInput=$("#postInput"), postBtn=$("#postBtn"), char=$("#charCount");
     const search=$("#globalSearch"), clear=$("#clearSearch"), moodChips=$$(".mood-chip");
+    const visibilityChips = $$("[data-post-visibility]");
+    const visibilityPill = $("#visibilityPill");
     const feedPrevBtn = $("#feedPrevBtn");
     const feedNextBtn = $("#feedNextBtn");
     const feedPageInfo = $("#feedPageInfo");
@@ -95,6 +219,7 @@
 
 
     const moodValueOf = (el) => (el?.dataset?.mood || el?.getAttribute("data-mood") || "").trim().toLowerCase();
+    const visibilityValueOf = (value) => (String(value || "").trim().toLowerCase() === "username" ? "username" : "anonymous");
 
     const setWallView = (view) => {
       if (!wallSection || !lecturerSection) return;
@@ -121,13 +246,24 @@
       ch.classList.toggle("active", moodValueOf(ch) === selectedMood);
     });
 
+    const paintVisibility=()=>visibilityChips.forEach(ch=>{
+      ch.classList.toggle("active", visibilityValueOf(ch.dataset.postVisibility) === selectedVisibility);
+    });
+
+    const syncVisibilityText = () => {
+      if (!visibilityPill) return;
+      visibilityPill.innerHTML = selectedVisibility === "username"
+        ? '<i class="fa-solid fa-user"></i> Username post'
+        : '<i class="fa-solid fa-lock"></i> Anonymous post';
+    };
+
     const truncateText = (text, limit) => {
       const raw = String(text || "");
       if (raw.length <= limit) return { short: raw, trimmed: false };
       const slice = raw.slice(0, limit);
       const safeSlice = slice.replace(/\s+\S*$/, "").trimEnd();
       const short = (safeSlice || slice).trimEnd();
-      return { short: `${short}…`, trimmed: true };
+      return { short: `${short}...`, trimmed: true };
     };
 
     moodChips.forEach(ch=>ch.addEventListener("click",(e)=>{
@@ -139,11 +275,22 @@
       toast(`Mood selected: ${selectedMood}`);
     }));
 
+    visibilityChips.forEach(ch=>ch.addEventListener("click",(e)=>{
+      const choice = visibilityValueOf(e.currentTarget?.dataset?.postVisibility);
+      selectedVisibility = choice;
+      localStorage.setItem("POST_VISIBILITY_KEY", selectedVisibility);
+      paintVisibility();
+      syncVisibilityText();
+      toast(choice === "username" ? "Posts will show your username" : "Posts will be anonymous");
+    }));
+
     paintMood();
+    paintVisibility();
+    syncVisibilityText();
 
     const api = {
       posts: ()=>fetchJSON(`${API}/posts/list.php`),
-      createPost: (content,mood)=>fetchJSON(`${API}/posts/create.php`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({content,mood})}),
+      createPost: (content,mood,isAnonymous)=>fetchJSON(`${API}/posts/create.php`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({content,mood,is_anonymous:isAnonymous})}),
       deletePost: (id)=>fetchJSON(`${API}/posts/delete.php`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id})}),
       comments: (post_id)=>fetchJSON(`${API}/comments/list.php?post_id=${post_id}`),
       createComment: (post_id,content)=>fetchJSON(`${API}/comments/create.php`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({post_id,content})}),
@@ -187,6 +334,7 @@
         const { short, trimmed } = truncateText(rawContent, FEED_PREVIEW_LIMIT);
         const shortSafe = esc(short);
         const fullSafe = esc(rawContent);
+        const authorLabel = Number(p.is_anonymous) ? "Anonymous Peer" : esc(p.full_name || "Community Member");
         const bodyHtml = trimmed
           ? `<p class="feed-body">
               <span class="feed-text feed-text-short">${shortSafe}</span>
@@ -197,7 +345,7 @@
         n.className="feed-item"; n.dataset.id=p.id;
         n.innerHTML = `
 
-          <div class="feed-head"><strong>Anonymous Peer</strong><small>${fmt(p.created_at)}</small></div>
+          <div class="feed-head"><strong>${authorLabel}</strong><small>${fmt(p.created_at)}</small></div>
           ${bodyHtml}
           <div class="feed-actions">
             <button class="feed-btn" data-action="copy">Copy</button>
@@ -207,7 +355,7 @@
           <div class="comments-wrap ${open?"":"hidden"}">
             <div class="comments-list">${cmts.length?visibleComments.map(renderComment).join(""):`<div class="comment-meta">No comments yet.</div>`}</div>
             ${hasHidden ? `<button class="feed-link" data-action="comment-expand">${showAll ? "Hide older comments" : "Show all comments"}</button>` : ""}
-            <div class="comment-form"><input class="comment-input" maxlength="300" placeholder="Write anonymous comment..." /><button class="comment-btn" data-action="comment-submit">Send</button></div>
+            <div class="comment-form"><input class="comment-input" maxlength="300" autocomplete="off" aria-label="Anonymous comment" placeholder="Write anonymous comment..." /><button class="comment-btn" data-action="comment-submit">Send</button></div>
           </div>`;
         feed.appendChild(n);
       });
@@ -233,10 +381,17 @@
     postInput?.addEventListener("input", ()=>char.textContent=`${postInput.value.length}/600`);
     postBtn?.addEventListener("click", async()=>{
       const content = (postInput.value||"").trim();
-      if(!content) return toast("Please write something first.");
-      await api.createPost(content, selectedMood || null);
-      postInput.value=""; char.textContent="0/600";
-      await load(); toast("Posted");
+      if(!content) return toast("Please write something first.", "warning");
+      setBusy(postBtn, true, "Posting...");
+      try {
+        await api.createPost(content, selectedMood || null, selectedVisibility !== "username");
+        postInput.value=""; char.textContent="0/600";
+        await load(); toast("Posted to the wall", "success");
+      } catch (err) {
+        toast(err.message || "Could not post right now", "error");
+      } finally {
+        setBusy(postBtn, false);
+      }
     });
 
     search?.addEventListener("input", ()=>{
@@ -253,7 +408,7 @@
       const btn = e.target.closest("[data-action]"); if(!btn) return;
       const card = btn.closest(".feed-item"); const pid = Number(card?.dataset.id||0); if(!pid) return;
 
-      if(btn.dataset.action==="copy"){ navigator.clipboard.writeText(card.querySelector(".feed-body")?.textContent||""); return toast("Copied"); }
+      if(btn.dataset.action==="copy"){ navigator.clipboard.writeText(card.querySelector(".feed-body")?.textContent||""); return toast("Copied", "success"); }
       if(btn.dataset.action==="feed-toggle"){
         const shortText = card.querySelector(".feed-text-short");
         const fullText = card.querySelector(".feed-text-full");
@@ -265,22 +420,44 @@
         return;
       }
 
-      if(btn.dataset.action==="delete"){ await api.deletePost(pid); await load(); return toast("Post deleted permanently"); }
+      if(btn.dataset.action==="delete"){
+        setBusy(btn, true, "Deleting...");
+        try {
+          await api.deletePost(pid);
+          await load();
+          return toast("Post deleted permanently", "success");
+        } catch (err) {
+          setBusy(btn, false);
+          return toast(err.message || "Could not delete post", "error");
+        }
+      }
       if(btn.dataset.action==="comment-toggle"){ openComments[pid]=!openComments[pid]; if(openComments[pid]) commentsByPost[pid]=await api.comments(pid).catch(()=>[]); return render(visiblePosts || posts); }
       if(btn.dataset.action==="comment-expand"){ openAllComments[pid]=!openAllComments[pid]; return render(visiblePosts || posts); }
       if(btn.dataset.action==="comment-submit"){
         const input = card.querySelector(".comment-input");
         const content = (input?.value||"").trim();
-        if(!content) return toast("Write a comment first");
-        await api.createComment(pid, content);
-        commentsByPost[pid]=await api.comments(pid); openComments[pid]=true; render(visiblePosts || posts); return toast("Comment added");
+        if(!content) return toast("Write a comment first", "warning");
+        setBusy(btn, true, "Sending...");
+        try {
+          await api.createComment(pid, content);
+          commentsByPost[pid]=await api.comments(pid); openComments[pid]=true; render(visiblePosts || posts); return toast("Comment added", "success");
+        } catch (err) {
+          setBusy(btn, false);
+          return toast(err.message || "Could not add comment", "error");
+        }
       }
 
       if(btn.dataset.action==="comment-delete"){
         const cid = Number(btn.closest(".comment-item")?.dataset.commentId||0);
         if(!cid) return;
-        await api.deleteComment(cid);
-        commentsByPost[pid]=await api.comments(pid); openComments[pid]=true; render(visiblePosts || posts); return toast("Comment deleted permanently");
+        setBusy(btn, true, "Deleting...");
+        try {
+          await api.deleteComment(cid);
+          commentsByPost[pid]=await api.comments(pid); openComments[pid]=true; render(visiblePosts || posts); return toast("Comment deleted permanently", "success");
+        } catch (err) {
+          setBusy(btn, false);
+          return toast(err.message || "Could not delete comment", "error");
+        }
       }
     });
 
@@ -320,6 +497,64 @@
       const checkinHeatStrip = $("#checkinHeatStrip");
 
       const now = new Date(); now.setHours(0,0,0,0);
+      const orderedMoodKeys = ["happy", "calm", "neutral", "anxious", "stressed"];
+      const moodTone = {happy:"Positive", calm:"Stable", neutral:"Balanced", anxious:"Needs care", stressed:"High pressure"};
+      const moodIcon = {happy:"fa-sun", calm:"fa-leaf", neutral:"fa-circle", anxious:"fa-cloud", stressed:"fa-bolt"};
+      const shortDate = (d) => d.toLocaleDateString(undefined, { month:"short", day:"numeric" });
+
+      const renderMoodMix = (counts, total) => {
+        freqBars.innerHTML = orderedMoodKeys.map(k=>{
+          const v = counts[k] || 0;
+          const pct = total ? Math.round((v / total) * 100) : 0;
+          return `<article class="freq-card" style="--mood-color:${moodColor[k]}">
+            <div class="freq-card-head">
+              <span class="freq-icon"><i class="fa-solid ${moodIcon[k]}"></i></span>
+              <div>
+                <strong>${moodLabel[k]}</strong>
+                <small>${moodTone[k]}</small>
+              </div>
+            </div>
+            <div class="freq-card-main">
+              <span>${v}</span>
+              <small>${pct}%</small>
+            </div>
+            <div class="freq-mini-track" aria-hidden="true"><span style="width:${pct}%"></span></div>
+          </article>`;
+        }).join("");
+      };
+
+      const renderRiskMeter = (riskPct, risk) => {
+        riskMeterFill.style.width = `${riskPct}%`;
+        riskMeterFill.style.background = risk === "High" ? "#ef4444" : risk === "Medium" ? "#f59e0b" : risk === "Low" ? "#22c55e" : "#64748b";
+        riskMeterValue.textContent = `${riskPct}%`;
+        riskMeterLabel.textContent = risk === "High"
+          ? "High emotional risk zone"
+          : risk === "Medium"
+            ? "Moderate emotional risk zone"
+            : risk === "Low"
+              ? "Low emotional risk zone"
+              : "No risk reading yet";
+      };
+
+      const renderMoodTimeline = (days) => {
+        checkinHeatStrip.innerHTML = days.map(({date, items, avg})=>{
+          const key = toDayKey(date);
+          if (!items.length) {
+            return `<article class="heat-day none" title="${key}: no log">
+              <span>${shortDate(date)}</span>
+              <strong>No log</strong>
+              <small>-</small>
+            </article>`;
+          }
+          const lvl = avg >= 4.2 ? "good" : avg >= 3 ? "mid" : "low";
+          const label = lvl === "good" ? "Better" : lvl === "mid" ? "Mixed" : "Tough";
+          return `<article class="heat-day ${lvl}" title="${key}: avg ${avg.toFixed(2)}">
+            <span>${shortDate(date)}</span>
+            <strong>${label}</strong>
+            <small>${avg.toFixed(1)}/5</small>
+          </article>`;
+        }).join("");
+      };
 
       if (!moodPosts.length) {
         overallMoodScore.textContent = "0/100";
@@ -335,22 +570,12 @@
         supportRecommendation.textContent = "If you feel overwhelmed now, use Resource Hub to request counselling.";
         nextActions.innerHTML = `<li>Log at least one mood entry today.</li><li>Continue for 7 days to unlock meaningful trend insights.</li>`;
 
-        freqBars.innerHTML = Object.keys(moodLabel).map(k=>`
-          <div class="freq-row">
-            <span class="freq-label">${moodLabel[k]}</span>
-            <div class="freq-track"><div class="freq-fill" style="width:0%;background:${moodColor[k]}"></div></div>
-            <span class="freq-value">0</span>
-          </div>
-        `).join("");
-
-        riskMeterFill.style.width = "0%";
-        riskMeterFill.style.background = "#64748b";
-        riskMeterValue.textContent = "0%";
-        riskMeterLabel.textContent = "No data";
+        renderMoodMix({happy:0, calm:0, neutral:0, anxious:0, stressed:0}, 0);
+        renderRiskMeter(0, "No data");
 
         const days = [];
         for(let i=13;i>=0;i--){ const d=new Date(now); d.setDate(now.getDate()-i); days.push(d); }
-        checkinHeatStrip.innerHTML = days.map(()=>`<span class="heat-cell none"></span>`).join("");
+        renderMoodTimeline(days.map(date=>({date, items:[], avg:0})));
         return;
       }
 
@@ -392,31 +617,17 @@
       const counts = {happy:0, calm:0, neutral:0, anxious:0, stressed:0};
       latest30.forEach(p=>{ if (counts[p.mood] !== undefined) counts[p.mood]++; });
 
-      freqBars.innerHTML = Object.keys(moodLabel).map(k=>{
-        const v = counts[k] || 0;
-        const pct = latest30.length ? Math.round((v/latest30.length)*100) : 0;
-        return `<div class="freq-row">
-          <span class="freq-label">${moodLabel[k]}</span>
-          <div class="freq-track"><div class="freq-fill" style="width:${pct}%;background:${moodColor[k]}"></div></div>
-          <span class="freq-value">${v}</span>
-        </div>`;
-      }).join("");
-
-      riskMeterFill.style.width = `${riskPct}%`;
-      riskMeterFill.style.background = risk === "High" ? "#ef4444" : risk === "Medium" ? "#f59e0b" : "#22c55e";
-      riskMeterValue.textContent = `${riskPct}%`;
-      riskMeterLabel.textContent = risk === "High" ? "High emotional risk zone" : risk === "Medium" ? "Moderate emotional risk zone" : "Low emotional risk zone";
+      renderMoodMix(counts, latest30.length);
+      renderRiskMeter(riskPct, risk);
 
       const days14 = [];
       for(let i=13;i>=0;i--){ const d=new Date(now); d.setDate(now.getDate()-i); days14.push(d); }
-      checkinHeatStrip.innerHTML = days14.map(d=>{
+      renderMoodTimeline(days14.map(d=>{
         const key = toDayKey(d);
         const items = moodPosts.filter(p=>toDayKey(p.created_at)===key);
-        if (!items.length) return `<span class="heat-cell none" title="${key}: no log"></span>`;
-        const avg = items.reduce((s,p)=>s+(moodScore[p.mood]||3),0)/items.length;
-        const lvl = avg >= 4.2 ? "good" : avg >= 3 ? "mid" : "low";
-        return `<span class="heat-cell ${lvl}" title="${key}: avg ${avg.toFixed(2)}"></span>`;
-      }).join("");
+        const avg = items.length ? items.reduce((s,p)=>s+(moodScore[p.mood]||3),0)/items.length : 0;
+        return {date:d, items, avg};
+      }));
 
       const weekly = last7Days.map(d=>{
         const key = toDayKey(d);
@@ -522,30 +733,21 @@
         skill_category:(skillCategory?.value||"").trim(),
         contact_email:(contactEmail?.value||"").trim()
       };
-      console.log('[DEBUG] talent/create payload', payload);
-      console.log('[DEBUG] talent inputs existence', {
-        skillName: !!skillName,
-        skillCategory: !!skillCategory,
-        description: !!description,
-        contactEmail: !!contactEmail
-      });
 
       // Client-side validation to prevent 422 from missing fields
-      if (!payload.skill_name) return toast("Skill name is required");
-      if (!payload.skill_category) return toast("Skill category is required");
-      if (!payload.description) return toast("Description is required");
-      if (!payload.contact_email) return toast("Contact email is required");
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.contact_email)) return toast("Enter a valid contact email");
+      if (!payload.skill_name) return toast("Skill name is required", "warning");
+      if (!payload.skill_category) return toast("Skill category is required", "warning");
+      if (!payload.description) return toast("Description is required", "warning");
+      if (!payload.contact_email) return toast("Contact email is required", "warning");
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.contact_email)) return toast("Enter a valid contact email", "warning");
 
       try {
-        const created = await fetchJSON(`${API}/talent/create.php`, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload) });
-        console.log('[DEBUG] talent/create response', created);
+        await fetchJSON(`${API}/talent/create.php`, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload) });
 
         skillName.value=""; description.value=""; skillCategory.value=""; contactEmail.value="";
-        await loadTalent(); toast("Talent card created");
+        await loadTalent(); toast("Talent card created", "success");
       } catch (err) {
-        console.error('[DEBUG] talent/create failed', err);
-        toast(err?.message || "Failed to create talent profile");
+        toast(err?.message || "Failed to create talent profile", "error");
       }
     });
 
@@ -616,7 +818,7 @@
         modalType = type;
         if (type === "medical") {
           modalTitle.textContent = "Medical Support Request";
-            modalMessage.textContent = "We will proceed with your medical appointment immediately.";
+          modalMessage.textContent = "We will proceed with your medical appointment immediately.";
         } else {
           modalTitle.textContent = "Counselling Session Request";
           modalMessage.textContent = "We will share your session details soon.";
@@ -631,7 +833,14 @@
         modal.setAttribute("aria-hidden", "true");
       };
 
-        const medicalTrigger = $("#medicalSupportBtn");
+      // ---- MODAL WIRING ----
+      // Do NOT prevent default link navigation for these buttons.
+      // If modal opening is desired in the future, it should be handled by separate UI triggers.
+      const medicalTrigger = $("#medicalSupportBtn");
+      const counsellingTrigger = $("#bookCounsellingBtn");
+      // (intentionally no click listeners here)
+
+
       modalClose?.addEventListener("click", closeModal);
       $$("[data-close-modal='1']").forEach(el=>el.addEventListener("click", closeModal));
 
@@ -654,6 +863,100 @@
         toast(modalType === "medical" ? "Medical support request saved" : "Counselling request saved");
         closeModal();
       });
+
+      // ---- RESOURCE HUB BUTTONS (ensure proper navigation) ----
+      // These are normal <a href> links; only add explicit prevention for clicks that may be treated as modal triggers.
+      $("#bookCounsellingBtn")?.addEventListener("click", (e)=>{ /* allow default */ });
+      $("#medicalSupportBtn")?.addEventListener("click", (e)=>{ /* allow default */ });
+
+      // ---- RESOURCE HUB PAGINATION ----
+      const articlesContainer = $("[data-resource-articles-container]");
+      const videosContainer = $("[data-resource-videos-container]");
+      const prevBtn = $("[data-resource-prev]");
+      const nextBtn = $("[data-resource-next]");
+      const pageInfo = $("[data-resource-page-info]");
+
+      // API returns 6 per page; UI requirement: 4 items per page for BOTH articles and videos.
+      // We'll keep the page index in sync with API, but render only first 4 of the slice.
+      const UI_PAGE_SIZE = 4;
+
+      let currentPage = 1;
+      let totalPages = 1;
+      let loading = false;
+
+      const renderArticles = (items=[]) => {
+        if (!articlesContainer) return;
+        const list = (items || []).slice(0, UI_PAGE_SIZE);
+        articlesContainer.innerHTML = list.map(a => `
+          <a class="article-item" href="${a.url}" target="_blank" rel="noopener noreferrer">
+            <i class="${a.icon || 'fa-solid fa-book'}"></i>
+            <div>
+              <h4>${esc(a.title)}</h4>
+              <p>${esc(a.desc)}</p>
+            </div>
+            <span><i class="fa-solid fa-up-right-from-square"></i></span>
+          </a>
+        `).join("");
+      };
+
+      const renderVideos = (items=[]) => {
+        if (!videosContainer) return;
+        const list = (items || []).slice(0, UI_PAGE_SIZE);
+        videosContainer.innerHTML = list.map(v => `
+          <div class="article-item video-item" style="display:block; padding:12px;">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+              <i class="fa-brands fa-youtube"></i>
+              <div>
+                <h4 style="margin:0;">${esc(v.title)}</h4>
+                <p style="margin:4px 0 0;">${esc(v.desc)}</p>
+              </div>
+            </div>
+            <a class="video-thumb" href="${v.href}" target="_blank" rel="noopener noreferrer" aria-label="Open video: ${esc(v.title)}">
+              <img src="${v.thumb}" alt="Thumbnail for ${esc(v.title)}" loading="lazy" />
+              <span class="video-play"><i class="fa-solid fa-play"></i></span>
+            </a>
+          </div>
+        `).join("");
+      };
+
+      const setButtons = () => {
+        if (prevBtn) prevBtn.toggleAttribute("disabled", currentPage <= 1);
+        if (nextBtn) nextBtn.toggleAttribute("disabled", currentPage >= totalPages);
+        if (pageInfo) pageInfo.textContent = `Page ${currentPage}`;
+      };
+
+      const load = async (page) => {
+        if (loading) return;
+        loading = true;
+        try {
+          const data = await fetchJSON(`${API}/resources/list.php?page=${page}`);
+          const articles = data?.articles?.items || [];
+          const videos = data?.videos?.items || [];
+
+          // Use the max total pages among articles/videos to keep buttons aligned.
+          const aPages = Number(data?.articles?.total_pages || 1);
+          const vPages = Number(data?.videos?.total_pages || 1);
+          totalPages = Math.max(1, aPages, vPages);
+          currentPage = Math.max(1, Math.min(page, totalPages));
+
+          renderArticles(articles);
+          renderVideos(videos);
+          setButtons();
+        } catch (err) {
+          toast(err.message || "Failed to load resources");
+        } finally {
+          loading = false;
+        }
+      };
+
+      prevBtn?.addEventListener("click", ()=>{
+        if (currentPage > 1) load(currentPage - 1);
+      });
+      nextBtn?.addEventListener("click", ()=>{
+        if (currentPage < totalPages) load(currentPage + 1);
+      });
+
+      load(1);
     }).catch(err=>toast(err.message));
   }
 
@@ -674,13 +977,18 @@
       const chatWindow = $("[data-chat-window]");
       const chatInput = $("[data-chat-input]");
       const chatSend = $("[data-chat-send]");
+      const chatPeer = $("[data-chat-peer]");
       // --- STATE VARIABLES ---
       let selectedDate = new Date(2026, 9, 15); // Default selected date
       let confirmed = false;
       let requestSaved = false;
+      let bookingId = null;
+      let chatLiveTimer = null;
       let mentors = [];
       let selectedLecturerId = null;
       let selectedSlots = [];
+// doctorSlots variable removed – not needed for lecturer page
+
       let selectedSlotId = null;
 
       // --- UTILITY FUNCTIONS ---
@@ -692,14 +1000,57 @@
       // Format a date for display
       const formatDate = (d) => d instanceof Date ? d.toLocaleDateString(undefined, { month:"short", day:"numeric", year:"numeric" }) : d;
 
+      const setChatNotice = (message) => {
+        if (!chatWindow) return;
+        chatWindow.innerHTML = `<div class="chat-empty">${esc(message)}</div>`;
+      };
+
+      const updateChatPeer = (name) => {
+        if (!chatPeer) return;
+        chatPeer.textContent = `Chat with ${name || "selected mentor"} (After Booking)`;
+      };
+
+      const renderChatMessages = (messages) => {
+        if (!chatWindow) return;
+        if (!Array.isArray(messages) || !messages.length) {
+          setChatNotice("No messages yet. Send the first message to your mentor.");
+          return;
+        }
+        chatWindow.innerHTML = messages.map(msg => {
+          const mine = Number(msg.sender_id) === Number(u.id);
+          const sender = mine ? "You" : (msg.full_name || "Mentor");
+          const time = msg.created_at ? new Date(msg.created_at).toLocaleTimeString(undefined, { hour:"2-digit", minute:"2-digit" }) : "";
+          return `<div class="chat-message ${mine ? "mine" : "theirs"}">
+            <div class="chat-meta"><strong>${esc(sender)}</strong><span>${esc(time)}</span></div>
+            <div>${esc(msg.message)}</div>
+          </div>`;
+        }).join("");
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+      };
+
+      const loadChatMessages = async () => {
+        if (!bookingId) return;
+        const rows = await fetchJSON(`${API}/chat/list.php?booking_id=${encodeURIComponent(bookingId)}`);
+        renderChatMessages(rows);
+      };
+
+      const startChatLive = () => {
+        if (chatLiveTimer) return;
+        chatLiveTimer = window.setInterval(() => {
+          if (!bookingId || document.hidden) return;
+          loadChatMessages().catch(() => {});
+        }, 5000);
+      };
+
       // --- RENDER SLOTS FOR SELECTED MENTOR ---
       const renderSlots = () => {
         const slotList = $(".slot-list");
         const noSlotsMsg = $(".no-slots-message");
         if (!slotList) return;
         if (selectedSlots.length) {
+          const firstAvailableIndex = selectedSlots.findIndex(slot => !isSlotBooked(slot));
           // Render each available slot as a button
-          slotList.innerHTML = selectedSlots.map((slot, idx) => `<button class="slot-btn ${idx === 0 ? "active" : ""}" type="button" data-slot data-slot-id="${slot.id}" data-slot-date="${slot.available_date}">${fmtDate(slot.available_date)} | ${slotLabel(slot)}</button>`).join("");
+          slotList.innerHTML = selectedSlots.map((slot, idx) => slotButtonHTML(slot, idx, idx === firstAvailableIndex)).join("");
           if (noSlotsMsg) noSlotsMsg.style.display = "none";
         } else {
           // Show message if no slots
@@ -707,11 +1058,12 @@
           if (noSlotsMsg) noSlotsMsg.style.display = "block";
         }
         slotButtons = $$("[data-slot]");
-        const activeSlot = slotButtons.find(btn => btn.classList.contains("active"));
+        const activeSlot = slotButtons.find(btn => btn.classList.contains("active") && !btn.disabled);
         selectedSlotId = activeSlot?.dataset.slotId || null;
         if (activeSlot?.dataset.slotDate) selectedDate = new Date(`${activeSlot.dataset.slotDate}T00:00:00`);
         // Add click listeners to slot buttons
         slotButtons.forEach(btn => btn.addEventListener("click", () => {
+          if (btn.disabled) return;
           slotButtons.forEach(x => x.classList.remove("active"));
           btn.classList.add("active");
           selectedSlotId = btn.dataset.slotId || null;
@@ -733,7 +1085,7 @@
                 <div>
                   <h4>${esc(mentor.lecturer_name)}</h4>
                   <small>${esc(mentor.lecturer_email)}</small>
-                  <div class="mentor-slots-preview">${mentor.slots && mentor.slots.length ? `${mentor.slots.length} available slot${mentor.slots.length === 1 ? '' : 's'}` : '<span style="color:#c00">No slots available</span>'}</div>
+                  <div class="mentor-slots-preview">${mentor.slots && mentor.slots.length ? `${mentor.slots.filter(slot => !isSlotBooked(slot)).length} available${mentor.slots.some(isSlotBooked) ? ` • ${mentor.slots.filter(isSlotBooked).length} booked` : ""}` : '<span class="inline-empty">No slots available</span>'}</div>
                 </div>
                 ${idx === 0 ? `<span class="badge-check"><i class="fa-solid fa-check"></i></span>` : ""}
               </article>
@@ -745,7 +1097,7 @@
             bindMentors();
             renderSlots();
           } else {
-            mentorList.innerHTML = '<div style="color:#c00;padding:10px;">No mentors found.</div>';
+            mentorList.innerHTML = '<div class="empty-inline">No mentors found.</div>';
             if (noMentorsMsg) noMentorsMsg.style.display = "block";
             selectedLecturerId = null;
             selectedSlots = [];
@@ -758,11 +1110,12 @@
       const updateSummary = () => {
         if (!summary) return;
         const mentor = activeText(mentorItems, "Selected mentor");
-        const activeSlot = slotButtons.find(btn => btn.classList.contains("active"));
+        updateChatPeer(mentor);
+        const activeSlot = slotButtons.find(btn => btn.classList.contains("active") && !btn.disabled);
         summary.innerHTML = `
           <p><strong>Mentor:</strong> ${mentor}</p>
           <p><strong>Date:</strong> ${formatDate(selectedDate)}</p>
-          <p><strong>Time:</strong> ${activeSlot?.textContent?.replace(/^.*\|\s*/, "").trim() || activeText(slotButtons, "Selected time")}</p>
+          <p><strong>Time:</strong> ${activeSlot?.dataset.slotTime || "No available time slot"}</p>
           <p><strong>Email:</strong> ${u.email || "Your account email"}</p>
         `;
         // Update the calendar UI
@@ -772,7 +1125,7 @@
         });
         // Show chat prompt if not confirmed
         if (!confirmed && chatWindow) {
-          chatWindow.textContent = `Book your session to start chatting with ${mentor.split(" ").slice(-1)[0] || "your mentor"}.`;
+          setChatNotice(`Book your session to start chatting with ${mentor.split(" ").slice(-1)[0] || "your mentor"}.`);
         }
       };
 
@@ -789,6 +1142,17 @@
         toast("Counselling request saved");
       };
 
+      const createSessionBooking = async () => {
+        return fetchJSON(`${API}/bookings/create.php`, {
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({
+            mentor_id: selectedLecturerId,
+            slot_id: selectedSlotId
+          })
+        });
+      };
+
       // --- BIND MENTOR CARD EVENTS ---
       function bindMentors(){
         mentorItems.forEach((item, idx) => item.addEventListener("click", () => {
@@ -803,6 +1167,14 @@
           // Update slots for selected mentor
           const mentor = mentors.find(m => String(m.lecturer_id) === String(selectedLecturerId));
           selectedSlots = mentor && Array.isArray(mentor.slots) ? mentor.slots : [];
+          confirmed = false;
+          requestSaved = false;
+          bookingId = null;
+          if (confirmBtn) {
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = "Confirm Booking";
+          }
+          if (chatInput) chatInput.disabled = true;
           renderSlots();
           updateSummary();
         }));
@@ -836,39 +1208,65 @@
       // --- CONFIRM BOOKING BUTTON ---
       confirmBtn?.addEventListener("click", async () => {
         if (requestSaved) return toast("Booking already confirmed");
-        confirmed = true;
-        requestSaved = true;
+        if (!slotButtons.find(b => b.classList.contains("active") && !b.disabled)) return toast("Please select an available time slot", "warning");
         confirmBtn.disabled = true;
-        confirmBtn.textContent = "Booking Confirmed";
-        if (chatInput) chatInput.disabled = false;
-        if (chatWindow) chatWindow.textContent = "Booking confirmed. You can now send a message to your mentor.";
+        confirmBtn.textContent = "Confirming...";
         try {
-          await saveCounsellingRequest();
+          const booking = await createSessionBooking();
+          bookingId = booking?.id || null;
+          confirmed = true;
+          requestSaved = true;
+          confirmBtn.textContent = "Booking Confirmed";
+          if (chatInput) {
+            chatInput.disabled = false;
+            chatInput.focus();
+          }
+          setChatNotice("Booking confirmed. You can now send a message to your mentor.");
+          try {
+            await saveCounsellingRequest();
+          } catch {
+            toast("Booking confirmed, but counselling request note was not saved", "warning");
+          }
+          await loadChatMessages();
+          startChatLive();
         } catch (err) {
+          confirmed = false;
           requestSaved = false;
+          bookingId = null;
           confirmBtn.disabled = false;
           confirmBtn.textContent = "Confirm Booking";
-          toast(err.message);
+          if (chatInput) chatInput.disabled = true;
+          toast(err.message || "Failed to confirm booking", "error");
         }
       });
 
       // --- CHAT EVENTS ---
-      chatSend?.addEventListener("click", () => {
+      chatSend?.addEventListener("click", async () => {
         if (!confirmed) return toast("Confirm your booking first");
+        if (!bookingId) return toast("Booking reference missing. Please confirm again.", "warning");
         const text = (chatInput?.value || "").trim();
-        if (!text) return toast("Type a message first");
-        if (chatWindow) {
-          const line = document.createElement("div");
-          line.className = "chat-message";
-          line.textContent = `You: ${text}`;
-          if (!chatWindow.querySelector(".chat-message")) chatWindow.textContent = "";
-          chatWindow.appendChild(line);
+        if (!text) return toast("Type a message first", "warning");
+        if (chatSend) chatSend.disabled = true;
+        try {
+          await fetchJSON(`${API}/chat/send.php`, {
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body: JSON.stringify({ booking_id: bookingId, message: text })
+          });
+          chatInput.value = "";
+          await loadChatMessages();
+          toast("Message sent", "success");
+        } catch (err) {
+          toast(err.message || "Failed to send message", "error");
+        } finally {
+          if (chatSend) chatSend.disabled = false;
         }
-        chatInput.value = "";
-        toast("Message added");
       });
       chatInput?.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") chatSend?.click();
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          chatSend?.click();
+        }
       });
 
       // --- INITIAL RENDER ---
@@ -876,82 +1274,271 @@
       // Fetch mentors and their availability from the backend
       fetchJSON(`${API}/availability/mentors_with_availability.php`)
         .then(rows => {
-          // Debug log for backend response
-          console.log('[DEBUG] mentors_with_availability.php response:', rows);
           if (Array.isArray(rows) && rows.length) {
             renderMentors(rows);
             updateSummary();
           } else {
-            console.warn('[DEBUG] No mentors found in API response:', rows);
+            renderMentors([]);
+            toast("No mentors with available slots found", "warning");
           }
         })
         .catch((err)=>{
-          console.error('[DEBUG] Error fetching mentors_with_availability.php:', err);
+          toast(err.message || "Failed to load mentors", "error");
         });
     }).catch(err=>toast(err.message));
   }
 
-  if(PAGE==="medical-support"){
+if(PAGE==="medical-support"){
     ensureAuth().then((u)=>{
-      const appointmentItems = $$("[data-appointment-card]");
-      const slotButtons = $$("[data-slot]");
+      // Medical UI is now rebuilt to behave like book-session:
+      // - Doctor selection
+      // - Calendar/date picking
+      // - Slot selection
+      // - Confirm booking
+
+      const doctorList = $(".doctor-list"); // dynamic cards container
+      let doctorItems = $$('[data-doctor-card]');
+      let slotButtons = $$('[data-slot]');
+
       const calendarTitle = $(".calendar-head span");
       const calendarGrid = $(".calendar-grid");
       const calendarPrev = $("[data-calendar-prev]");
       const calendarNext = $("[data-calendar-next]");
-      const summary = $("[data-medical-summary]");
-      const bookBtn = $("[data-review-medical]");
-      const confirmBtn = $("[data-confirm-medical]");
-      let selectedDate = new Date(2026, 9, 15);
-      let requestSaved = false;
 
+      const summary = $("[data-medical-summary]");
+      const confirmBtn = $("[data-confirm-medical]");
+      const medicalChatPeer = $("[data-medical-chat-peer]");
+      const medicalChatWindow = $("[data-medical-chat-window]");
+      const medicalChatInput = $("[data-medical-chat-input]");
+      const medicalChatSend = $("[data-medical-chat-send]");
+
+      let selectedDate = new Date(2026, 9, 15);
+      let confirmed = false;
+      let requestSaved = false;
+      let bookingId = null;
+      let medicalChatLiveTimer = null;
+
+      let doctors = [];
+      let selectedDoctorId = null;
+      let selectedSlots = [];
+      let selectedSlotId = null;
+
+      const normalizeDoctorAvailability = (rows=[]) => {
+        if (!Array.isArray(rows)) return [];
+        if (rows.some(row => Array.isArray(row?.slots))) return rows;
+
+        const grouped = new Map();
+        rows.forEach(row => {
+          const doctorId = row.doctor_id ?? row.lecturer_id;
+          if (!doctorId) return;
+
+          const key = String(doctorId);
+          if (!grouped.has(key)) {
+            grouped.set(key, {
+              doctor_id: doctorId,
+              doctor_name: row.doctor_name || row.lecturer_name || "Doctor",
+              doctor_email: row.doctor_email || row.lecturer_email || "",
+              slots: []
+            });
+          }
+
+          grouped.get(key).slots.push({
+            id: row.id,
+            doctor_id: doctorId,
+            available_date: row.available_date,
+            start_time: row.start_time,
+            end_time: row.end_time,
+            note: row.note
+          });
+        });
+
+        return [...grouped.values()];
+      };
+
+      // Try to keep title text aligned with book-session behavior
       const activeText = (items, fallback) => {
         const active = items.find(item => item.classList.contains("active"));
         return active?.querySelector("h4")?.textContent?.trim() || active?.textContent?.trim() || fallback;
       };
-      const formatDate = (d) => d.toLocaleDateString(undefined, { month:"short", day:"numeric", year:"numeric" });
+
+      const formatDate = (d) => d instanceof Date
+        ? d.toLocaleDateString(undefined, { month:"short", day:"numeric", year:"numeric" })
+        : String(d || "");
+
+      const setMedicalChatNotice = (message) => {
+        if (!medicalChatWindow) return;
+        medicalChatWindow.innerHTML = `<div class="chat-empty">${esc(message)}</div>`;
+      };
+
+      const loadMedicalChat = async () => {
+        if (!bookingId) return;
+        const rows = await loadChatThread(bookingId);
+        renderChatThread(medicalChatWindow, rows, u.id, "No messages yet. Send the first message to your doctor.");
+      };
+
+      const startMedicalChatLive = () => {
+        if (medicalChatLiveTimer) return;
+        medicalChatLiveTimer = window.setInterval(() => {
+          if (!bookingId || document.hidden) return;
+          loadMedicalChat().catch(() => {});
+        }, 5000);
+      };
+
       const updateSummary = () => {
         if (!summary) return;
+        const doctor = activeText(doctorItems, "Selected doctor");
+        if (medicalChatPeer) medicalChatPeer.textContent = `Chat with ${doctor || "selected doctor"} (After Booking)`;
+        const activeSlot = slotButtons.find(btn => btn.classList.contains("active"));
+        const timeText = activeSlot?.dataset.slotTime || "No available time slot";
+
         summary.innerHTML = `
           <p><strong>Location:</strong> University Medical Center (Building D)</p>
           <p><strong>Date:</strong> ${formatDate(selectedDate)}</p>
-          <p><strong>Time:</strong> ${activeText(slotButtons, "Selected time")}</p>
-          <p><strong>Type:</strong> ${activeText(appointmentItems, "Selected appointment")}</p>
+          <p><strong>Time:</strong> ${timeText}</p>
+          <p><strong>Doctor:</strong> ${doctor}</p>
           <p><strong>Email:</strong> ${u.email || "Your account email"}</p>
         `;
+
+        // Render calendar month grid
         renderBookingCalendar(calendarGrid, calendarTitle, selectedDate, (date) => {
           selectedDate = date;
           updateSummary();
         });
+        if (!confirmed) setMedicalChatNotice(`Book your medical slot to start chatting with ${doctor || "your doctor"}.`);
       };
+
+      const renderSlots = () => {
+        const slotList = $(".slot-list");
+        const noSlotsMsg = $(".no-slots-message");
+        if (!slotList) return;
+
+        if (selectedSlots.length) {
+          const firstAvailableIndex = selectedSlots.findIndex(slot => !isSlotBooked(slot));
+          slotList.innerHTML = selectedSlots.map((slot, idx) => `
+            ${slotButtonHTML(slot, idx, idx === firstAvailableIndex)}
+          `).join("");
+          if (noSlotsMsg) noSlotsMsg.style.display = "none";
+        } else {
+          slotList.innerHTML = "";
+          if (noSlotsMsg) noSlotsMsg.style.display = "block";
+        }
+
+        slotButtons = $$("[data-slot]");
+        const activeSlot = slotButtons.find(btn => btn.classList.contains("active") && !btn.disabled);
+        selectedSlotId = activeSlot?.dataset.slotId || null;
+        if (activeSlot?.dataset.slotDate) selectedDate = new Date(`${activeSlot.dataset.slotDate}T00:00:00`);
+
+        // Bind click to update active slot
+        slotButtons.forEach(btn => btn.addEventListener("click", () => {
+          if (btn.disabled) return;
+          slotButtons.forEach(x => x.classList.remove("active"));
+          btn.classList.add("active");
+          selectedSlotId = btn.dataset.slotId || null;
+          if (btn.dataset.slotDate) selectedDate = new Date(`${btn.dataset.slotDate}T00:00:00`);
+          updateSummary();
+        }));
+      };
+
+      const renderDoctors = (rows=[]) => {
+        doctors = Array.isArray(rows) ? rows : [];
+
+        const noDoctors = $(".no-mentors-message");
+        if (!doctorList) return;
+
+        if (doctors.length) {
+          doctorList.innerHTML = doctors.map((d, idx) => `
+            <article class="support-item ${idx === 0 ? "active" : ""}" role="button" tabindex="0" data-doctor-card data-doctor-id="${d.doctor_id}">
+              <div class="mentor-avatar"></div>
+              <div>
+                <h4>${esc(d.doctor_name || d.lecturer_name || "Doctor")}</h4>
+                <small>${esc(d.doctor_email || d.lecturer_email || "")}</small>
+                <div class="mentor-slots-preview">
+                  ${d.slots && d.slots.length
+                    ? `${d.slots.filter(slot => !isSlotBooked(slot)).length} available${d.slots.some(isSlotBooked) ? ` • ${d.slots.filter(isSlotBooked).length} booked` : ""}`
+                    : '<span class="inline-empty">No slots available</span>'}
+                </div>
+              </div>
+              ${idx === 0 ? `<span class="badge-check"><i class="fa-solid fa-check"></i></span>` : ""}
+            </article>
+          `).join("");
+
+          if (noDoctors) noDoctors.style.display = "none";
+          doctorItems = $$('[data-doctor-card]');
+          selectedDoctorId = doctorItems[0]?.dataset.doctorId || null;
+          selectedSlots = doctors[0]?.slots || [];
+          bindDoctors();
+          renderSlots();
+        } else {
+          doctorList.innerHTML = '<div class="empty-inline">No doctors found.</div>';
+          if (noDoctors) noDoctors.style.display = "block";
+          selectedDoctorId = null;
+          selectedSlots = [];
+          renderSlots();
+        }
+      };
+
+      const bindDoctors = () => {
+        doctorItems.forEach((item) => item.addEventListener("click", () => {
+          doctorItems.forEach(x => {
+            x.classList.remove("active");
+            x.querySelector(".badge-check")?.remove();
+          });
+          item.classList.add("active");
+          item.insertAdjacentHTML("beforeend", `<span class="badge-check"><i class="fa-solid fa-check"></i></span>`);
+
+          selectedDoctorId = item.dataset.doctorId || null;
+          const doc = doctors.find(m => String(m.doctor_id) === String(selectedDoctorId))
+            || doctors.find(m => String(m.lecturer_id) === String(selectedDoctorId));
+          selectedSlots = doc && Array.isArray(doc.slots) ? doc.slots : [];
+          confirmed = false;
+          requestSaved = false;
+          bookingId = null;
+          if (confirmBtn) {
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = "Confirm Medical Slot";
+          }
+          if (medicalChatInput) medicalChatInput.disabled = true;
+          if (medicalChatSend) medicalChatSend.disabled = true;
+          renderSlots();
+          updateSummary();
+        }));
+
+        doctorItems.forEach(item => item.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            item.click();
+          }
+        }));
+      };
+
+      const createMedicalBooking = async () => {
+        return fetchJSON(`${API}/bookings/create.php`, {
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({
+            provider_type: "doctor",
+            doctor_id: selectedDoctorId,
+            slot_id: selectedSlotId
+          })
+        });
+      };
+
       const saveMedicalRequest = async () => {
+        // Reuse existing request endpoint; backend will queue/handle medical booking.
         await fetchJSON(`${API}/resource/create_request.php`, {
           method:"POST",
           headers:{"Content-Type":"application/json"},
           body: JSON.stringify({
             request_type: "medical",
-            requester_email: u.email || ""
+            requester_email: u.email || "",
+            // Optional metadata if backend ignores it, it's still fine.
+            doctor_id: selectedDoctorId,
+            available_date: selectedDate.toISOString().slice(0,10)
           })
         });
-        toast("Medical support request saved");
       };
 
-      appointmentItems.forEach(item => item.addEventListener("click", () => {
-        appointmentItems.forEach(x => x.classList.remove("active"));
-        item.classList.add("active");
-        updateSummary();
-      }));
-      appointmentItems.forEach(item => item.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          item.click();
-        }
-      }));
-      slotButtons.forEach(btn => btn.addEventListener("click", () => {
-        slotButtons.forEach(x => x.classList.remove("active"));
-        btn.classList.add("active");
-        updateSummary();
-      }));
+      // Calendar navigation
       calendarPrev?.addEventListener("click", () => {
         selectedDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth() - 1, Math.min(selectedDate.getDate(), 28));
         updateSummary();
@@ -960,29 +1547,90 @@
         selectedDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, Math.min(selectedDate.getDate(), 28));
         updateSummary();
       });
-      bookBtn?.addEventListener("click", () => {
-        summary?.scrollIntoView({ behavior:"smooth", block:"center" });
-        toast("Review your medical slot");
-      });
+
       confirmBtn?.addEventListener("click", async () => {
         if (requestSaved) return toast("Medical slot already confirmed");
-        requestSaved = true;
+        if (!selectedDoctorId) return toast("Please select a doctor");
+        if (!slotButtons.length || !slotButtons.find(b => b.classList.contains('active') && !b.disabled)) return toast("Please select an available time slot", "warning");
+
         confirmBtn.disabled = true;
-        confirmBtn.textContent = "Medical Slot Confirmed";
+        confirmBtn.textContent = "Confirming...";
+
         try {
-          await saveMedicalRequest();
+          const booking = await createMedicalBooking();
+          bookingId = booking?.id || null;
+          requestSaved = true;
+          confirmed = true;
+          confirmBtn.textContent = "Medical Slot Confirmed";
+          if (medicalChatInput) {
+            medicalChatInput.disabled = false;
+            medicalChatInput.focus();
+          }
+          if (medicalChatSend) medicalChatSend.disabled = false;
+          setMedicalChatNotice("Medical slot confirmed. You can now send a message to your doctor.");
+          try {
+            await saveMedicalRequest();
+          } catch {
+            toast("Medical slot confirmed, but support request note was not saved", "warning");
+          }
+          await loadMedicalChat();
+          startMedicalChatLive();
+          toast("Medical slot confirmed", "success");
         } catch (err) {
+          bookingId = null;
+          confirmed = false;
           requestSaved = false;
           confirmBtn.disabled = false;
           confirmBtn.textContent = "Confirm Medical Slot";
-          toast(err.message);
+          if (medicalChatInput) medicalChatInput.disabled = true;
+          if (medicalChatSend) medicalChatSend.disabled = true;
+          toast(err.message || "Failed to confirm medical slot", "error");
         }
       });
+
+      medicalChatSend?.addEventListener("click", async () => {
+        if (!confirmed || !bookingId) return toast("Confirm your medical slot first", "warning");
+        const text = (medicalChatInput?.value || "").trim();
+        if (!text) return toast("Type a message first", "warning");
+        medicalChatSend.disabled = true;
+        try {
+          await sendChatMessage(bookingId, text);
+          medicalChatInput.value = "";
+          await loadMedicalChat();
+          toast("Message sent", "success");
+        } catch (err) {
+          toast(err.message || "Failed to send message", "error");
+        } finally {
+          medicalChatSend.disabled = false;
+        }
+      });
+
+      medicalChatInput?.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          medicalChatSend?.click();
+        }
+      });
+
       updateSummary();
+
+      // Fetch doctors/availability for medical booking.
+      fetchJSON(`${API}/availability/doctor_availability/get_all.php?grouped=1`)
+        .then(rows => {
+          const normalizedRows = normalizeDoctorAvailability(rows);
+          renderDoctors(normalizedRows);
+          updateSummary();
+          if (!normalizedRows.length) toast("No doctors with available slots found", "warning");
+        })
+        .catch((err)=>{
+          toast(err.message || "Failed to load medical availability", "error");
+        });
+
+
     }).catch(err=>toast(err.message));
   }
 
-  if(PAGE==="lecturer" || (PAGE === "wall" && document.querySelector("#lecturerSection"))){
+  if(PAGE==="lecturer" || PAGE==="doctor-availability" || (PAGE === "wall" && document.querySelector("#lecturerSection"))){
     (async ()=>{
       const dateInput = $("#availabilityDate");
       const startInput = $("#availabilityStart");
@@ -992,6 +1640,12 @@
       const list = $("#availabilityList");
       const empty = $("#availabilityEmpty");
       const status = $("#availabilityStatus");
+      const providerChatList = $("#providerChatList");
+      const providerChatTitle = $("#providerChatTitle");
+      const providerChatMeta = $("#providerChatMeta");
+      const providerChatWindow = $("#providerChatWindow");
+      const providerChatInput = $("#providerChatInput");
+      const providerChatSend = $("#providerChatSend");
 
       const setStatus = (message, kind = "info") => {
         if (!status) return;
@@ -1019,11 +1673,11 @@
       try {
         me = await fetchJSON(`${API}/auth/me.php`);
       } catch {
-        disableForm("Please sign in as a lecturer to manage availability.");
+        disableForm("Please sign in to manage availability.");
         return;
       }
 
-      if (!["lecturer", "admin"].includes(me.role)) {
+      if (!["lecturer", "admin", "doctor"].includes(me.role)) {
         disableForm("Access restricted to lecturers and admins.");
         return;
       }
@@ -1033,9 +1687,85 @@
       if (startInput) startInput.value = "09:00";
       if (endInput) endInput.value = "10:00";
 
-      const render = (rows=[]) => {
+      let availabilityAllRows = [];
+      let availabilityCurrentPage = 1;
+      let providerBookings = [];
+      let activeProviderBookingId = null;
+      let providerChatLiveTimer = null;
+      let providerChatPolling = false;
+      const AVAIL_PAGE_SIZE = 4;
+
+      const renderProviderChats = (rows = []) => {
+        providerBookings = Array.isArray(rows) ? rows : [];
+        if (!providerChatList) return;
+
+        if (!providerBookings.length) {
+          providerChatList.innerHTML = '<div class="empty-inline">No booked student chats yet.</div>';
+          if (providerChatInput) providerChatInput.disabled = true;
+          if (providerChatSend) providerChatSend.disabled = true;
+          return;
+        }
+
+        providerChatList.innerHTML = providerBookings.map((booking, idx) => `
+          <button class="provider-chat-item ${idx === 0 ? "active" : ""}" type="button" data-provider-booking-id="${booking.id}">
+            <strong>${esc(booking.student_name || "Student")}</strong>
+            <span>${fmtDate(booking.session_date)} • ${fmtTime(booking.start_time)}-${fmtTime(booking.end_time)}</span>
+            <small>${booking.last_message ? esc(booking.last_message) : "No messages yet"}</small>
+          </button>
+        `).join("");
+
+        const first = providerBookings[0];
+        if (!activeProviderBookingId && first) activeProviderBookingId = String(first.id);
+      };
+
+      const openProviderChat = async (bookingId) => {
+        const booking = providerBookings.find(item => String(item.id) === String(bookingId));
+        if (!booking) return;
+        activeProviderBookingId = String(booking.id);
+        providerChatList?.querySelectorAll(".provider-chat-item").forEach(btn => {
+          btn.classList.toggle("active", btn.dataset.providerBookingId === activeProviderBookingId);
+        });
+        if (providerChatTitle) providerChatTitle.textContent = booking.student_name || "Student chat";
+        if (providerChatMeta) providerChatMeta.textContent = `${fmtDate(booking.session_date)} • ${fmtTime(booking.start_time)}-${fmtTime(booking.end_time)}`;
+        if (providerChatInput) providerChatInput.disabled = false;
+        if (providerChatSend) providerChatSend.disabled = false;
+        const messages = await loadChatThread(activeProviderBookingId);
+        renderChatThread(providerChatWindow, messages, me.id, "No messages yet. Reply when the student sends a message.");
+      };
+
+      const loadProviderChats = async () => {
+        if (!providerChatList) return;
+        const rows = await fetchJSON(`${API}/bookings/list.php`);
+        renderProviderChats(rows);
+        if (providerBookings.length) {
+          await openProviderChat(activeProviderBookingId || providerBookings[0].id);
+        }
+      };
+
+      const startProviderChatLive = () => {
+        if (providerChatLiveTimer || !providerChatList) return;
+        providerChatLiveTimer = window.setInterval(async () => {
+          if (document.hidden || providerChatPolling) return;
+          providerChatPolling = true;
+          try {
+            await loadProviderChats();
+          } catch {
+            // Keep live polling quiet; manual actions still show errors.
+          } finally {
+            providerChatPolling = false;
+          }
+        }, 5000);
+      };
+
+      const render = (rows = []) => {
+        availabilityAllRows = Array.isArray(rows) ? rows : [];
+        const totalPages = Math.max(1, Math.ceil(availabilityAllRows.length / AVAIL_PAGE_SIZE));
+        availabilityCurrentPage = Math.min(availabilityCurrentPage, totalPages);
+        const start = (availabilityCurrentPage - 1) * AVAIL_PAGE_SIZE;
+        const pageRows = availabilityAllRows.slice(start, start + AVAIL_PAGE_SIZE);
+
         if (!list) return;
-        list.innerHTML = rows.map(row => `
+        list.innerHTML = pageRows.map(row => `
           <article class="availability-card" data-availability-id="${row.id}">
             <div>
               <strong>${fmtDate(row.available_date)}</strong>
@@ -1047,17 +1777,89 @@
             </button>
           </article>
         `).join("");
-        empty?.classList.toggle("hidden", rows.length > 0);
+
+        empty?.classList.toggle("hidden", availabilityAllRows.length > 0);
+
+        const existingControls = document.querySelector('.pagination-controls');
+        if (existingControls) existingControls.remove();
+        if (availabilityAllRows.length > 0) {
+          const paginationHTML = `
+            <div class="pagination-controls">
+              <button id="availabilityPrevBtn" ${availabilityCurrentPage <= 1 ? 'disabled' : ''}>Prev</button>
+              <span id="availabilityPageInfo">Page ${availabilityCurrentPage} of ${totalPages}</span>
+              <button id="availabilityNextBtn" ${availabilityCurrentPage >= totalPages ? 'disabled' : ''}>Next</button>
+            </div>`;
+          list.insertAdjacentHTML('beforeend', paginationHTML);
+
+          const prevBtn = $('#availabilityPrevBtn');
+          const nextBtn = $('#availabilityNextBtn');
+          prevBtn?.addEventListener('click', () => {
+            if (availabilityCurrentPage > 1) {
+              availabilityCurrentPage--;
+              render(availabilityAllRows);
+            }
+          });
+          nextBtn?.addEventListener('click', () => {
+            if (availabilityCurrentPage < totalPages) {
+              availabilityCurrentPage++;
+              render(availabilityAllRows);
+            }
+          });
+        }
       };
 
       const load = async () => {
         try {
-          const rows = await fetchJSON(`${API}/availability/list.php?mine=1`);
+          const endpoint = me && me.role === "doctor"
+            ? `${API}/availability/list.php?mine=1&type=doctor`
+            : `${API}/availability/list.php?mine=1`;
+          const rows = await fetchJSON(endpoint);
+          if (me && me.role === "doctor" && me.full_name) {
+            const nameEl = document.getElementById('doctorName');
+            if (nameEl) nameEl.textContent = me.full_name;
+          }
           render(Array.isArray(rows) ? rows : []);
+          await loadProviderChats();
+          startProviderChatLive();
         } catch (err) {
           setStatus(err.message || "Failed to load availability", "error");
         }
       };
+
+      providerChatList?.addEventListener("click", async (e) => {
+        const item = e.target.closest("[data-provider-booking-id]");
+        if (!item) return;
+        try {
+          await openProviderChat(item.dataset.providerBookingId);
+        } catch (err) {
+          toast(err.message || "Failed to load chat", "error");
+        }
+      });
+
+      providerChatSend?.addEventListener("click", async () => {
+        if (!activeProviderBookingId) return toast("Select a student chat first", "warning");
+        const text = (providerChatInput?.value || "").trim();
+        if (!text) return toast("Type a reply first", "warning");
+        providerChatSend.disabled = true;
+        try {
+          await sendChatMessage(activeProviderBookingId, text);
+          providerChatInput.value = "";
+          await openProviderChat(activeProviderBookingId);
+          await loadProviderChats();
+          toast("Reply sent", "success");
+        } catch (err) {
+          toast(err.message || "Failed to send reply", "error");
+        } finally {
+          providerChatSend.disabled = false;
+        }
+      });
+
+      providerChatInput?.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          providerChatSend?.click();
+        }
+      });
 
       saveBtn?.addEventListener("click", async () => {
         if (!dateInput?.value || !startInput?.value || !endInput?.value) {

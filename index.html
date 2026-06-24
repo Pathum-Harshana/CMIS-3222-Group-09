@@ -1,21 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AuraHub | Login</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 
   <!-- UPDATED -->
-  <link rel="stylesheet" href="auth.css?v=ui-polish-1" />
+  <link rel="stylesheet" href="auth.css?v=ux-polish-1" />
 </head>
+
 <body>
   <main class="auth-shell">
     <section class="auth-card">
-      <h1 class="brand">aura<span>hub</span></h1>
+      <h1 class="brand">Aura<span>hub</span></h1>
       <p class="sub">Sign in and continue your wellbeing journey.</p>
+      <div class="auth-trust-row" aria-label="AuraHub support highlights">
+        <span><i class="fa-solid fa-shield-heart"></i> Private check-ins</span>
+        <span><i class="fa-solid fa-user-doctor"></i> Guided support</span>
+      </div>
 
       <div class="tabs">
         <button id="tabLogin" class="tab active" type="button">Sign In</button>
@@ -23,40 +30,105 @@
       </div>
 
       <form id="loginForm" class="form active">
-        <label>Email Address</label>
-        <input id="loginEmail" type="email" placeholder="you@example.com" required />
-        <label>Password</label>
-        <input id="loginPassword" type="password" placeholder="Enter your password" required />
+        <label for="loginEmail">Email Address</label>
+        <input id="loginEmail" type="email" placeholder="you@example.com" autocomplete="email" required />
+        <label for="loginPassword">Password</label>
+        <input id="loginPassword" type="password" placeholder="Enter your password" autocomplete="current-password" required />
         <button class="btn primary" type="submit"><i class="fa-solid fa-right-to-bracket"></i> Sign In</button>
 
       </form>
 
       <form id="signupForm" class="form">
-        <label>Full Name</label>
-        <input id="signupName" type="text" placeholder="Your full name" required />
-        <label>Email Address</label>
-        <input id="signupEmail" type="email" placeholder="you@example.com" required />
-        
+          <label for="signupName">Full Name</label>
+          <input id="signupName" type="text" placeholder="Your full name" autocomplete="name" required />
+          <label for="signupEmail">Email Address</label>
+          <input id="signupEmail" type="email" placeholder="you@example.com" autocomplete="email" required />
 
-        </select>
-        <label>Password (min 6 chars)</label>
-        <input id="signupPassword" type="password" minlength="6" placeholder="Create a secure password" required />
-        <button class="btn primary" type="submit"><i class="fa-solid fa-user-plus"></i> Create Account</button>
+          <label for="signupPassword">Password (min 6 chars)</label>
+          <input id="signupPassword" type="password" minlength="6" placeholder="Create a secure password" autocomplete="new-password" required />
+
+          <label for="guardianName">Guardian Name</label>
+          <input id="guardianName" type="text" placeholder="Guardian full name" autocomplete="name" required />
+
+          <label for="guardianPhone">Guardian Phone</label>
+          <input id="guardianPhone" type="tel" placeholder="Guardian phone number" autocomplete="tel" required />
+
+          <button class="btn primary" type="submit"><i class="fa-solid fa-user-plus"></i> Create Account</button>
       </form>
 
-      <p id="authMsg" class="msg"></p>
+      <p id="authMsg" class="msg" role="status" aria-live="polite"></p>
     </section>
   </main>
 
-  <!-- UPDATED -->
-  <script src="auth.js?v=ui-polish-2"></script>
+  <!-- Fullscreen background slider (no video-bg classes) -->
+  <div id="auth-bg-slider" aria-hidden="true">
+    <div id="auth-bg-slide"></div>
+    <div id="auth-bg-slide-next"></div>
+    <div id="auth-bg-overlay"></div>
+  </div>
 
   <script>
-    if (!window.__authLoaded) {
-      const el = document.getElementById("authMsg");
-      if (el) el.textContent = "Auth script failed to load. Please refresh or check auth.js";
-    }
+    (function () {
+      const imgs = [
+        'images/img_1.png',
+        'images/img3.jpg',
+        'images/img4.jpg'
+      ];
+
+      const slideEl = document.getElementById('auth-bg-slide');
+      const nextEl = document.getElementById('auth-bg-slide-next');
+      if (!slideEl || !nextEl || imgs.length === 0) return;
+
+      let idx = 0;
+      const HOLD_MS = 4500;
+      const FADE_MS = 1100;
+
+      slideEl.style.backgroundImage = `url("${imgs[0]}")`;
+      slideEl.dataset.bgIdx = '0';
+      imgs.forEach(src => {
+        const img = new Image();
+        img.src = src;
+      });
+
+      const setBg = () => {
+        if (imgs.length < 2 || nextEl.classList.contains('is-visible')) return;
+        const nextIdx = (idx + 1) % imgs.length;
+        nextEl.style.backgroundImage = `url("${imgs[nextIdx]}")`;
+        nextEl.classList.add('is-visible');
+
+        window.setTimeout(() => {
+          slideEl.style.backgroundImage = `url("${imgs[nextIdx]}")`;
+          slideEl.dataset.bgIdx = String(nextIdx);
+          nextEl.classList.remove('is-visible');
+          idx = nextIdx;
+        }, FADE_MS);
+      };
+
+      if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        window.setInterval(setBg, HOLD_MS);
+      }
+    })();
+  </script>
+
+
+
+
+
+
+  <!-- UPDATED -->
+  <script src="auth.js?v=ux-polish-1"></script>
+
+
+
+  <script>
+    window.setTimeout(() => {
+      if (!window.__authLoaded) {
+        const el = document.getElementById("authMsg");
+        if (el) el.textContent = "Auth script failed to load. Please refresh or check auth.js";
+      }
+    }, 800);
   </script>
 
 </body>
+
 </html>
