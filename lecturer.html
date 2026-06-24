@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AuraHub - Mentor Availability</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <link rel="stylesheet" href="style.css?v=ui-polish-2" />
+  <link rel="stylesheet" href="style.css?v=provider-chat-1" />
 </head>
 <body data-page="lecturer">
   <div class="aura-glow-1"></div><div class="aura-glow-2"></div>
@@ -92,46 +92,57 @@
           <article class="ui-card lecturer-alerts">
             <div class="section-head">
               <h3>Priority Alerts</h3>
-              <span class="hero-badge"><i class="fa-solid fa-bell"></i> 2</span>
+              <span class="hero-badge"><i class="fa-solid fa-bell"></i> Smart queue</span>
             </div>
             <div class="alert-list">
               <div class="alert-item">
-                <strong>Follow up with Rina S.</strong>
-                <small>3 missed check-ins • Last mood: stressed</small>
+                <strong>Review low-engagement students</strong>
+                <small>Use recent check-ins before adding this week's slots.</small>
               </div>
               <div class="alert-item">
-                <strong>Send resources to Jason K.</strong>
-                <small>Requested support material • Due today</small>
+                <strong>Keep one evening slot open</strong>
+                <small>Students are more likely to book outside class hours.</small>
               </div>
             </div>
-            <button class="post-btn" type="button">Open Alerts Queue</button>
           </article>
 
           <article class="ui-card lecturer-actions">
             <div class="section-head">
               <h3>Quick Actions</h3>
-              <span class="hero-badge"><i class="fa-solid fa-bolt"></i> Fast</span>
+              <span class="hero-badge"><i class="fa-solid fa-wand-magic-sparkles"></i> Assist</span>
             </div>
             <div class="action-grid">
-              <button class="action-card" type="button">
-                <i class="fa-solid fa-envelope"></i>
-                Send check-in reminders
-              </button>
-              <button class="action-card" type="button">
-                <i class="fa-solid fa-book"></i>
-                Share wellbeing resources
-              </button>
-              <button class="action-card" type="button">
-                <i class="fa-solid fa-calendar-plus"></i>
-                Create recurring slots
-              </button>
-              <button class="action-card" type="button">
-                <i class="fa-solid fa-user-plus"></i>
-                Add new mentee
-              </button>
+              <button class="action-card" type="button"><i class="fa-solid fa-calendar-plus"></i> Add weekly slots</button>
+              <button class="action-card" type="button"><i class="fa-solid fa-envelope"></i> Send reminders</button>
+              <button class="action-card" type="button"><i class="fa-solid fa-book-open"></i> Share resources</button>
+              <button class="action-card" type="button"><i class="fa-solid fa-chart-line"></i> View progress</button>
             </div>
           </article>
         </div>
+
+        <article class="ui-card provider-chat-card">
+          <div class="section-head">
+            <div>
+              <h3>Student Session Chats</h3>
+              <p class="graph-sub">Messages from students who booked your sessions.</p>
+            </div>
+            <span class="hero-badge"><i class="fa-solid fa-comments"></i> Live chat</span>
+          </div>
+          <div class="provider-chat-layout">
+            <div id="providerChatList" class="provider-chat-list"></div>
+            <div class="chat-box provider-chat-box">
+              <h4 id="providerChatTitle">Select a student chat</h4>
+              <p id="providerChatMeta">Booked student conversations appear here.</p>
+              <div class="chat-window" id="providerChatWindow">
+                <div class="chat-empty">Select a booked session to view messages.</div>
+              </div>
+              <div class="chat-input">
+                <input id="providerChatInput" type="text" maxlength="500" autocomplete="off" placeholder="Reply to student..." disabled />
+                <button id="providerChatSend" type="button" aria-label="Send reply" disabled><i class="fa-solid fa-paper-plane"></i></button>
+              </div>
+            </div>
+          </div>
+        </article>
 
         <div class="lecturer-layout">
           <article class="ui-card lecturer-form-card">
@@ -142,10 +153,10 @@
             <p class="lecturer-helper">Tip: Add 2-3 slots each week to keep students on track.</p>
             <p id="availabilityStatus" class="lecturer-status hidden" role="status"></p>
             <div class="lecturer-form-grid">
-              <label>Date<input id="availabilityDate" type="date" /></label>
-              <label>Start Time<input id="availabilityStart" type="time" /></label>
-              <label>End Time<input id="availabilityEnd" type="time" /></label>
-              <label class="wide">Note<input id="availabilityNote" type="text" maxlength="255" placeholder="Optional note for students" /></label>
+              <label>Date<input id="availabilityDate" type="date" required /></label>
+              <label>Start Time<input id="availabilityStart" type="time" required /></label>
+              <label>End Time<input id="availabilityEnd" type="time" required /></label>
+              <label class="wide">Note<input id="availabilityNote" type="text" maxlength="255" autocomplete="off" placeholder="Optional note for students" /></label>
             </div>
             <div class="lecturer-form-actions">
               <button id="availabilitySaveBtn" class="post-btn" type="button">Save Slot</button>
@@ -158,7 +169,37 @@
               <span class="hero-badge"><i class="fa-solid fa-clock"></i> Live</span>
             </div>
             <div id="availabilityList" class="availability-list"></div>
-            <p id="availabilityEmpty" class="empty">No availability slots yet.</p>
+            <p id="availabilityEmpty" class="empty">Not available</p>
+            <!-- Timetable Section -->
+            <section id="timetableSection" class="ui-card timetable-card hidden">
+              <div class="section-head">
+                <h3>Availability Timetable</h3>
+                <input type="date" id="timetableDate" aria-label="Timetable date" />
+              </div>
+              <table id="timetableTable" class="timetable"></table>
+            </section>
+            <article class="ui-card student-list-card">
+              <div class="section-head">
+                <h3>Your Students</h3>
+                <span class="hero-badge"><i class="fa-solid fa-users"></i> Undergraduates</span>
+              </div>
+              <section id="studentsList" class="feed">
+              <article class="feed-item">
+                <div class="feed-head">
+                  <strong>Amara W.</strong>
+                  <small>Grade: 2nd Year</small>
+                </div>
+                <div class="feed-body">
+                  <p><strong>Guardian:</strong> Mrs. Wijesekara</p>
+                  <p>Contact: +94 71 234 5678</p>
+                </div>
+                <div class="feed-actions">
+                  <button class="feed-btn notify-guardian" data-phone="+94712345678">Notify Guardian</button>
+                </div>
+              </article>
+              <!-- More student items can be added dynamically -->
+            </section>
+            </article>
           </article>
         </div>
       </section>
@@ -166,14 +207,15 @@
   </div>
 
   <nav class="mobile-nav">
-    <a class="nav-btn active" href="lecturer.html"><i class="fa-solid fa-calendar-check"></i></a>
-    <a class="nav-btn" href="resource.html"><i class="fa-solid fa-book-medical"></i></a>
+    <a class="nav-btn active" href="lecturer.html" aria-label="Mentor Availability"><i class="fa-solid fa-calendar-check"></i></a>
+    <a class="nav-btn" href="resource.html" aria-label="Resource Hub"><i class="fa-solid fa-book-medical"></i></a>
     <button class="nav-btn nav-logout" type="button" data-logout aria-label="Sign Out">
       <i class="fa-solid fa-arrow-right-from-bracket"></i>
     </button>
   </nav>
 
   <div id="toastContainer" class="toast-container"></div>
-  <script src="app.js?v=ui-polish-1"></script>
+  <script src="app-bg-slider.js?v=bg-slider-fit-1"></script>
+<script src="app.js?v=provider-chat-1"></script>
 </body>
 </html>

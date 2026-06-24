@@ -1,30 +1,73 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AuraHub Admin Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/Aurahub/auth.css?v=ui-polish-1" />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="auth.css?v=ux-polish-1" />
 </head>
-<body>
-  <div class="video-bg" aria-hidden="true"></div>
-  <div class="video-overlay" aria-hidden="true"></div>
+
+<body class="admin-auth">
+  <!-- Static background image for admin page -->
+  <div id="auth-bg-overlay"></div>
+  <!-- Removed slideshow div -->
+
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background-image: url('images/img_1.png');
+      background-size: cover !important;
+      background-position: center center !important;
+      background-repeat: no-repeat !important;
+      background-attachment: fixed;
+    }
+
+    #auth-bg-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(4, 10, 20, .55);
+      z-index: 0;
+    }
+
+    .auth-shell {
+      position: relative;
+      z-index: 1;
+    }
+
+    body::before {
+      display: none;
+    }
+
+    @media (max-width: 760px) {
+      body {
+        background-attachment: scroll;
+      }
+    }
+  </style>
+
+  <!-- Static background image; slideshow removed -->
+
   <main class="auth-shell">
     <section class="auth-card wide">
-      <div class="admin-brand-row">
-        <h1 class="brand">aura<span>hub admin</span></h1>
-        <span class="admin-chip">Control Center</span>
-      </div>
-
       <form id="adminLoginForm" class="form active">
-        <label>Email</label>
-        <input id="adminEmail" type="email" placeholder="admin@aurahub.local" required />
-        <label>Password</label>
-        <input id="adminPassword" type="password" placeholder="Enter password" required />
+        <div class="admin-brand-row">
+          <div>
+            <h1 class="brand">Aura<span>hub</span></h1>
+            <p class="sub">Admin control center</p>
+          </div>
+          <span class="admin-chip">Secure</span>
+        </div>
+        <label for="adminEmail">Email</label>
+        <input id="adminEmail" type="email" placeholder="admin@aurahub.local" autocomplete="email" required />
+        <label for="adminPassword">Password</label>
+        <input id="adminPassword" type="password" placeholder="Enter password" autocomplete="current-password" required />
         <button class="btn primary" type="submit">Admin Sign In</button>
-        <button class="btn ghost" type="button" onclick="location.href='index.html'">Back</button>
+        <a class="btn ghost auth-back-link" href="index.html">Back</a>
       </form>
 
       <section id="adminPanel" class="admin-panel hidden">
@@ -39,6 +82,32 @@
         <div id="adminStatsCards" class="stats-grid"></div>
 
         <div class="dash-block">
+          <h4>Add Doctor / Lecturer</h4>
+          <form id="adminCreateUserForm" class="admin-create-form">
+            <label for="newUserName">
+              Name
+              <input id="newUserName" type="text" maxlength="120" placeholder="Full name" autocomplete="name" required />
+            </label>
+            <label for="newUserEmail">
+              Email
+              <input id="newUserEmail" type="email" maxlength="190" placeholder="person@aurahub.local" autocomplete="email" required />
+            </label>
+            <label for="newUserRole">
+              Role
+              <select id="newUserRole" required>
+                <option value="doctor">Doctor</option>
+                <option value="lecturer">Lecturer</option>
+              </select>
+            </label>
+            <label for="newUserPassword">
+              Password
+              <input id="newUserPassword" type="password" minlength="6" autocomplete="new-password" placeholder="Minimum 6 characters" required />
+            </label>
+            <button class="btn primary" type="submit">Add User</button>
+          </form>
+        </div>
+
+        <div class="dash-block">
           <h4>Users & Roles</h4>
           <div id="adminUsers"></div>
         </div>
@@ -49,8 +118,8 @@
         </div>
 
         <div class="dash-block">
-          <h4>Resource Requests</h4>
-          <div id="adminResourceRequests"></div>
+          <h4>Doctor Availability</h4>
+          <div id="adminDoctorAvailability"></div>
         </div>
 
         <div class="dash-block">
@@ -67,7 +136,7 @@
       <p id="adminMsg" class="msg"></p>
     </section>
   </main>
-  <script src="/Aurahub/admin.js?v=ui-polish-2"></script>
+  <script src="admin.js?v=field-standards-1"></script>
   <script>
     if (!window.__adminLoaded) {
       const el = document.getElementById("adminMsg");
@@ -75,4 +144,5 @@
     }
   </script>
 </body>
+
 </html>

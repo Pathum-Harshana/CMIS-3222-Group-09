@@ -6,7 +6,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <link rel="stylesheet" href="style.css?v=ui-polish-2" />
+  <link rel="stylesheet" href="style.css?v=ux-polish-1" />
 </head>
 <body data-page="wall">
   <div class="aura-glow-1"></div><div class="aura-glow-2"></div>
@@ -28,37 +28,54 @@
 
     <main class="main">
       <header class="topbar">
-        <label class="search-wrap"><i class="fa-solid fa-search"></i><input id="globalSearch" type="text" placeholder="Search posts..." /><button id="clearSearch" type="button"><i class="fa-solid fa-xmark"></i></button></label>
-        <button class="bell"><i class="fa-regular fa-bell"></i><span class="dot"></span></button>
+        <label class="search-wrap"><i class="fa-solid fa-search"></i><input id="globalSearch" type="search" maxlength="120" autocomplete="off" placeholder="Search posts..." aria-label="Search posts" /><button id="clearSearch" type="button" aria-label="Clear search"><i class="fa-solid fa-xmark"></i></button></label>
+        <button class="bell" type="button" aria-label="Notifications"><i class="fa-regular fa-bell"></i><span class="dot"></span></button>
       </header>
 
       <section id="wallSection" class="page active">
         <div class="hero">
           <div>
-            <h2>Welcome back. 👋</h2>
+            <h2>Welcome back.</h2>
             <p>This is your safe space. Take a deep breath.</p>
           </div>
           <span class="hero-badge"><i class="fa-solid fa-spa"></i> Safe Zone</span>
         </div>
 
-        <p>Share your thoughts anonymously, support peers, and build a healthier student community.</p>
+        <div class="smart-strip" aria-label="Safe wall snapshot">
+          <article>
+            <small>Posting mode</small>
+            <strong>Anonymous or named</strong>
+          </article>
+          <article>
+            <small>Community tone</small>
+            <strong>Support first</strong>
+          </article>
+          <article>
+            <small>Daily action</small>
+            <strong>Mood + reflection</strong>
+          </article>
+        </div>
 
         <div class="ui-card mood-panel">
           <div class="mood-panel-head"><h3>How are you feeling now?</h3><small>Quick check-in</small></div>
           <div class="mood-options">
-            <button class="mood-chip" data-mood="happy" type="button">😄 Happy</button>
-            <button class="mood-chip" data-mood="calm" type="button">🙂 Calm</button>
-            <button class="mood-chip" data-mood="neutral" type="button">😐 Neutral</button>
-            <button class="mood-chip" data-mood="anxious" type="button">😟 Anxious</button>
-            <button class="mood-chip" data-mood="stressed" type="button">😫 Stressed</button>
+            <button class="mood-chip" data-mood="happy" type="button"><i class="fa-solid fa-sun"></i> Happy</button>
+            <button class="mood-chip" data-mood="calm" type="button"><i class="fa-solid fa-leaf"></i> Calm</button>
+            <button class="mood-chip" data-mood="neutral" type="button"><i class="fa-regular fa-circle"></i> Neutral</button>
+            <button class="mood-chip" data-mood="anxious" type="button"><i class="fa-solid fa-cloud"></i> Anxious</button>
+            <button class="mood-chip" data-mood="stressed" type="button"><i class="fa-solid fa-bolt"></i> Stressed</button>
           </div>
           <p style="margin-top:8px;">Tip: Select a mood before posting to improve your mood analytics.</p>
         </div>
 
         <h3 class="small-label">LOG YOUR DAILY AURA</h3>
         <div class="composer ui-card">
-          <div class="composer-head"><i class="fa-solid fa-user-secret"></i><textarea id="postInput" rows="3" maxlength="600" placeholder="Vent anonymously... without judgment."></textarea></div>
-          <div class="composer-foot"><span class="pill"><i class="fa-solid fa-lock"></i> 100% Anonymous</span><div><small id="charCount">0/600</small><button id="postBtn" class="post-btn">Post to Wall</button></div></div>
+          <div class="composer-head"><i class="fa-solid fa-user-secret"></i><textarea id="postInput" rows="3" maxlength="600" placeholder="Vent anonymously... without judgment." aria-label="Post content"></textarea></div>
+          <div class="privacy-toggle" role="radiogroup" aria-label="Post visibility">
+            <button class="privacy-chip active" type="button" data-post-visibility="anonymous">Anonymous</button>
+            <button class="privacy-chip" type="button" data-post-visibility="username">My Username</button>
+          </div>
+          <div class="composer-foot"><span id="visibilityPill" class="pill"><i class="fa-solid fa-lock"></i> Anonymous post</span><div><small id="charCount">0/600</small><button id="postBtn" class="post-btn">Post to Wall</button></div></div>
         </div>
 
         <section class="feed-wrap">
@@ -219,9 +236,9 @@
               <span class="hero-badge"><i class="fa-solid fa-plus"></i> New</span>
             </div>
             <div class="lecturer-form-grid">
-              <label>Date<input id="availabilityDate" type="date" /></label>
-              <label>Start Time<input id="availabilityStart" type="time" /></label>
-              <label>End Time<input id="availabilityEnd" type="time" /></label>
+              <label>Date<input id="availabilityDate" type="date" required /></label>
+              <label>Start Time<input id="availabilityStart" type="time" required /></label>
+              <label>End Time<input id="availabilityEnd" type="time" required /></label>
               <label class="wide">Note<input id="availabilityNote" type="text" maxlength="255" placeholder="Optional note for students" /></label>
             </div>
             <p id="availabilityStatus" class="lecturer-status hidden" role="status"></p>
@@ -245,10 +262,10 @@
 
   <nav class="mobile-nav">
 
-    <a class="nav-btn active" href="#wall" data-view="wall"><i class="fa-solid fa-house"></i></a>
-    <a class="nav-btn" href="mood.html"><i class="fa-solid fa-chart-pie"></i></a>
-    <a class="nav-btn" href="talent.html"><i class="fa-solid fa-user-group"></i></a>
-    <a class="nav-btn" href="resource.html"><i class="fa-solid fa-book-medical"></i></a>
+    <a class="nav-btn active" href="#wall" data-view="wall" aria-label="Safe-Base Wall"><i class="fa-solid fa-house"></i></a>
+    <a class="nav-btn" href="mood.html" aria-label="Mood Trends"><i class="fa-solid fa-chart-pie"></i></a>
+    <a class="nav-btn" href="talent.html" aria-label="Talent Exchange"><i class="fa-solid fa-user-group"></i></a>
+    <a class="nav-btn" href="resource.html" aria-label="Resource Hub"><i class="fa-solid fa-book-medical"></i></a>
     <a class="nav-btn hidden" href="#lecturer" data-role="lecturer" data-view="lecturer" aria-label="Mentor Availability"><i class="fa-solid fa-calendar-check"></i></a>
     <button class="nav-btn nav-logout" type="button" data-logout aria-label="Sign Out">
       <i class="fa-solid fa-arrow-right-from-bracket"></i>
@@ -261,6 +278,7 @@
 
 
   <div id="toastContainer" class="toast-container"></div>
-  <script src="app.js?v=ui-polish-1"></script>
+  <script src="app-bg-slider.js?v=bg-slider-fit-2"></script>
+<script src="app.js?v=ux-polish-1"></script>
 </body>
 </html>

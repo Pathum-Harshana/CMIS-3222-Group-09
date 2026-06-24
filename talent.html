@@ -2,7 +2,7 @@
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AuraHub - Talent Exchange</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-<link rel="stylesheet" href="style.css?v=ui-polish-2"></head>
+<link rel="stylesheet" href="style.css?v=ux-polish-1"></head>
 <body data-page="talent">
   
 <div class="app">
@@ -30,8 +30,8 @@
 
       <div class="ui-card talent-tools">
         <div class="talent-search-row">
-          <input id="talentSearchInput" type="text" placeholder="Search skill, student, description (e.g. photography)" />
-          <select id="talentCategoryFilter">
+          <input id="talentSearchInput" type="search" maxlength="120" autocomplete="off" placeholder="Search skill, student, description (e.g. photography)" aria-label="Search talent profiles" />
+          <select id="talentCategoryFilter" aria-label="Filter talent category">
             <option value="">All Categories</option>
             <option>Photography</option>
             <option>Design</option>
@@ -49,8 +49,8 @@
       <div class="ui-card talent-form-wrap">
         <h3>Create Your Help Card</h3>
         <div class="talent-form-grid">
-          <input id="talentSkillName" type="text" placeholder="Skill Name (e.g. Photography Basics)" />
-          <select id="talentSkillCategory">
+          <input id="talentSkillName" type="text" maxlength="120" autocomplete="off" placeholder="Skill Name (e.g. Photography Basics)" aria-label="Skill name" required />
+          <select id="talentSkillCategory" aria-label="Skill category" required>
             <option value="">Select Category</option>
             <option>Photography</option>
             <option>Design</option>
@@ -61,8 +61,8 @@
             <option>Music</option>
             <option>Other</option>
           </select>
-          <input id="talentContactEmail" type="email" placeholder="Contact Email" />
-          <textarea id="talentDescription" rows="3" placeholder="Short description of how you can help others..."></textarea>
+          <input id="talentContactEmail" type="email" maxlength="190" autocomplete="email" placeholder="Contact Email" aria-label="Contact email" required />
+          <textarea id="talentDescription" rows="3" maxlength="600" placeholder="Short description of how you can help others..." aria-label="Skill description" required></textarea>
         </div>
         <div class="talent-form-actions">
           <button id="talentCreateBtn" class="post-btn" type="button">Create Profile Card</button>
@@ -91,10 +91,10 @@
 </div>
 
 <nav class="mobile-nav">
-  <a class="nav-btn" href="wall.html"><i class="fa-solid fa-house"></i></a>
-  <a class="nav-btn" href="mood.html"><i class="fa-solid fa-chart-pie"></i></a>
-  <a class="nav-btn active" href="talent.html"><i class="fa-solid fa-user-group"></i></a>
-  <a class="nav-btn" href="resource.html"><i class="fa-solid fa-book-medical"></i></a>
+  <a class="nav-btn" href="wall.html" aria-label="Safe-Base Wall"><i class="fa-solid fa-house"></i></a>
+  <a class="nav-btn" href="mood.html" aria-label="Mood Trends"><i class="fa-solid fa-chart-pie"></i></a>
+  <a class="nav-btn active" href="talent.html" aria-label="Talent Exchange"><i class="fa-solid fa-user-group"></i></a>
+  <a class="nav-btn" href="resource.html" aria-label="Resource Hub"><i class="fa-solid fa-book-medical"></i></a>
   <a class="nav-btn hidden" href="wall.html#lecturer" data-role="lecturer" aria-label="Mentor Availability"><i class="fa-solid fa-calendar-check"></i></a>
   <button class="nav-btn nav-logout" type="button" data-logout aria-label="Sign Out">
     <i class="fa-solid fa-arrow-right-from-bracket"></i>
@@ -102,5 +102,6 @@
 </nav>
 
 <div id="toastContainer" class="toast-container"></div>
-<script src="app.js?v=ui-polish-1"></script>
+<script src="app-bg-slider.js?v=bg-slider-fit-2"></script>
+<script src="app.js?v=ux-polish-1"></script>
 </body></html>
