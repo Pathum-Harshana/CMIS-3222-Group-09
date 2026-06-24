@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en" data-page="mentor-students">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AuraHub – Mentor Students</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+  <link rel="stylesheet" href="style.css?v=ux-polish-1" />
+</head>
+<body data-page="mentor-students">
+  <div class="aura-glow-1"></div><div class="aura-glow-2"></div>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon"></div>
+        <h1>AuraHub<span>.</span></h1>
+      </div>
+      <nav class="sidebar-nav">
+        <a class="nav-btn" href="lecturer.html"><i class="fa-solid fa-calendar-check"></i><span>Availability</span></a>
+        <a class="nav-btn active" href="mentor-students.html"><i class="fa-solid fa-user-graduate"></i><span>Students</span></a>
+        <a class="nav-btn" href="resource.html"><i class="fa-solid fa-book-medical"></i><span>Resource Hub</span></a>
+        <button id="logoutBtn" class="nav-btn nav-logout" type="button" data-logout>
+          <i class="fa-solid fa-arrow-right-from-bracket"></i><span>Sign Out</span>
+        </button>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <section class="page active mentor-students-page">
+        <div class="section-head">
+          <div>
+            <h2 class="page-title">Your Undergraduate Mentees</h2>
+            <p class="small-label">View students and quickly inform their guardians if an issue arises.</p>
+          </div>
+        </div>
+
+        <!-- Students grid – will be populated by app.js -->
+        <div id="studentsList" class="feed"></div>
+      </section>
+    </main>
+  </div>
+
+  <nav class="mobile-nav">
+    <a class="nav-btn" href="lecturer.html" aria-label="Mentor Availability"><i class="fa-solid fa-calendar-check"></i></a>
+    <a class="nav-btn active" href="mentor-students.html" aria-label="Mentor Students"><i class="fa-solid fa-user-graduate"></i></a>
+    <a class="nav-btn" href="resource.html" aria-label="Resource Hub"><i class="fa-solid fa-book-medical"></i></a>
+    <button class="nav-btn nav-logout" type="button" data-logout aria-label="Sign Out"><i class="fa-solid fa-arrow-right-from-bracket"></i></button>
+  </nav>
+
+  <div id="toastContainer" class="toast-container"></div>
+  <script src="app-bg-slider.js?v=bg-slider-fit-1"></script>
+<script src="app.js?v=ux-polish-1"></script>
+  <script>
+    // Mock student data – replace with real API call when available
+    const mockStudents = [
+      {
+        name: "Amara Wijesekara",
+        course: "BSc Computer Science",
+        guardian: "Mrs. Wijesekara",
+        phone: "+94 71 234 5678"
+      },
+      {
+        name: "Jason Kularathne",
+        course: "BA Psychology",
+        guardian: "Mr. Kularathne",
+        phone: "+94 77 987 6543"
+      }
+    ];
+
+    const renderStudents = () => {
+      const container = document.getElementById('studentsList');
+      container.innerHTML = mockStudents.map(stu => `
+        <article class="ui-card student-card">
+          <div class="student-info">
+            <h3>${stu.name}</h3>
+            <p class="student-course">${stu.course}</p>
+            <p class="guardian-name"><strong>Guardian:</strong> ${stu.guardian}</p>
+            <p class="guardian-phone"><strong>Phone:</strong> <span class="phone-number">${stu.phone}</span></p>
+          </div>
+          <button class="post-btn notify-btn" type="button" data-phone="${stu.phone}">Notify Guardian</button>
+        </article>
+      `).join('');
+
+      // Attach click handlers for notification buttons
+      document.querySelectorAll('.notify-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const phone = btn.dataset.phone;
+          // Placeholder – in production you would call an SMS/email API
+          toast(`Guardian ${phone} has been notified`);
+        });
+      });
+    };
+
+    // Run after DOM ready – rely on existing DOMContentLoaded handling in app.js
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', renderStudents);
+    } else {
+      renderStudents();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AuraHub - Doctor Availability</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="style.css?v=provider-chat-1" />
+</head>
+
+<body data-page="doctor-availability">
+  <div class="aura-glow-1"></div>
+  <div class="aura-glow-2"></div>
+
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon"></div>
+        <h1>AuraHub<span>.</span></h1>
+      </div>
+      <nav class="sidebar-nav">
+        <a class="nav-btn active" href="doctor-availability.html"><i class="fa-solid fa-calendar-check"></i><span>Doctor
+            Availability</span></a>
+        <a class="nav-btn" href="resource.html"><i class="fa-solid fa-book-medical"></i><span>Resource Hub</span></a>
+        <button id="logoutBtn" class="nav-btn nav-logout" type="button" data-logout>
+          <i class="fa-solid fa-arrow-right-from-bracket"></i><span>Sign Out</span>
+        </button>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <section class="page active doctor-page">
+          <div class="section-head">
+            <div>
+              <h2 class="page-title">Doctor Availability</h2>
+              <p id="doctorName" class="doctor-name"></p>
+              <p class="small-label">UPDATE DATES • OPEN MEDICAL SLOTS • HELP PATIENTS BOOK</p>
+            </div>
+          </div>
+
+        <div class="lecturer-hero ui-card">
+          <div>
+            <h3>Plan your medical openings</h3>
+            <p>These slots appear for students on the Medical Support booking page.</p>
+          </div>
+          <span class="hero-badge"><i class="fa-solid fa-bolt"></i> Auto sync</span>
+        </div>
+
+        <div class="smart-strip" aria-label="Doctor availability guidance">
+          <article>
+            <small>Visibility</small>
+            <strong>Future slots only</strong>
+          </article>
+          <article>
+            <small>Recommended</small>
+            <strong>2-3 slots weekly</strong>
+          </article>
+          <article>
+            <small>Student flow</small>
+            <strong>Medical booking page</strong>
+          </article>
+        </div>
+
+        <div class="lecturer-layout">
+          <article class="ui-card lecturer-form-card">
+            <div class="lecturer-card-head">
+              <h3>Add Available Slot</h3>
+              <span class="hero-badge"><i class="fa-solid fa-plus"></i> New</span>
+            </div>
+            <p class="lecturer-helper">Tip: Add 2-3 slots each week for availability to be visible.</p>
+
+            <p id="availabilityStatus" class="lecturer-status hidden" role="status"></p>
+
+            <div class="lecturer-form-grid">
+              <label>Date<input id="availabilityDate" type="date" required /></label>
+              <label>Start Time<input id="availabilityStart" type="time" required /></label>
+              <label>End Time<input id="availabilityEnd" type="time" required /></label>
+              <label class="wide">Note<input id="availabilityNote" type="text" maxlength="255"
+                  autocomplete="off" placeholder="Optional note for patients" /></label>
+            </div>
+
+            <div class="lecturer-form-actions">
+              <button id="availabilitySaveBtn" class="post-btn" type="button">Save Slot</button>
+            </div>
+          </article>
+
+          <article class="ui-card lecturer-list-card">
+            <div class="section-head">
+              <h3>Your Upcoming Slots</h3>
+              <span class="hero-badge"><i class="fa-solid fa-clock"></i> Live</span>
+            </div>
+            <div id="availabilityList" class="availability-list"></div>
+            <p id="availabilityEmpty" class="empty">Not available</p>
+          </article>
+        </div>
+
+        <article class="ui-card provider-chat-card">
+          <div class="section-head">
+            <div>
+              <h3>Student Medical Chats</h3>
+              <p class="graph-sub">Messages from students who booked your medical slots.</p>
+            </div>
+            <span class="hero-badge"><i class="fa-solid fa-comments"></i> Live chat</span>
+          </div>
+          <div class="provider-chat-layout">
+            <div id="providerChatList" class="provider-chat-list"></div>
+            <div class="chat-box provider-chat-box">
+              <h4 id="providerChatTitle">Select a student chat</h4>
+              <p id="providerChatMeta">Booked medical conversations appear here.</p>
+              <div class="chat-window" id="providerChatWindow">
+                <div class="chat-empty">Select a booked medical slot to view messages.</div>
+              </div>
+              <div class="chat-input">
+                <input id="providerChatInput" type="text" maxlength="500" autocomplete="off" placeholder="Reply to student..." disabled />
+                <button id="providerChatSend" type="button" aria-label="Send reply" disabled><i class="fa-solid fa-paper-plane"></i></button>
+              </div>
+            </div>
+          </div>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <nav class="mobile-nav">
+    <a class="nav-btn active" href="doctor-availability.html" aria-label="Doctor Availability"><i class="fa-solid fa-calendar-check"></i></a>
+    <a class="nav-btn" href="resource.html" aria-label="Resource Hub"><i class="fa-solid fa-book-medical"></i></a>
+    <button class="nav-btn nav-logout" type="button" data-logout aria-label="Sign Out">
+      <i class="fa-solid fa-arrow-right-from-bracket"></i>
+    </button>
+  </nav>
+
+  <div id="toastContainer" class="toast-container"></div>
+  <script src="app-bg-slider.js?v=bg-slider-fit-1"></script>
+<script src="app.js?v=provider-chat-1"></script>
+</body>
+
+</html>

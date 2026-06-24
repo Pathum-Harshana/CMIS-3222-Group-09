@@ -2,7 +2,7 @@
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AuraHub - Medical Support</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-<link rel="stylesheet" href="style.css?v=ui-polish-2"></head>
+<link rel="stylesheet" href="style.css?v=provider-chat-1"></head>
 <body data-page="medical-support">
   
 <div class="app">
@@ -14,7 +14,6 @@
       <a class="nav-btn" href="resource.html"><i class="fa-solid fa-book-medical"></i><span>Resource Hub</span></a>
       <a class="nav-btn hidden" href="wall.html#lecturer" data-role="lecturer"><i class="fa-solid fa-calendar-check"></i><span>Mentor Availability</span></a>
       <a class="nav-btn" href="book-session.html"><i class="fa-solid fa-calendar-check"></i><span>Book a Session</span></a>
-      <a class="nav-btn active" href="medical-support.html"><i class="fa-solid fa-truck-medical"></i><span>Medical Support</span></a>
       <button id="logoutBtn" class="nav-btn nav-logout" type="button" data-logout>
         <i class="fa-solid fa-arrow-right-from-bracket"></i><span>Sign Out</span>
       </button>
@@ -26,59 +25,29 @@
       <h2 class="page-title">Medical Support</h2>
       <p class="small-label">INSTANT SUPPORT • UNIVERSITY MEDICAL CENTER • BOOK YOUR SLOT</p>
 
-      <div class="support-grid">
-        <!-- LEFT: Appointments -->
-        <article class="ui-card support-panel">
-          <h3>University Medical Center Appointments</h3>
-          <div class="support-list">
-            <article class="support-item active" role="button" tabindex="0" data-appointment-card>
-              <div class="support-icon teal"><i class="fa-solid fa-stethoscope"></i></div>
-              <div>
-                <h4>General Practitioner Consultation</h4>
-                <p>Routine check-ups, illness diagnosis, referrals.</p>
-              </div>
-            </article>
-            <article class="support-item" role="button" tabindex="0" data-appointment-card>
-              <div class="support-icon amber"><i class="fa-solid fa-notes-medical"></i></div>
-              <div>
-                <h4>Mental Health Assessment</h4>
-                <p>Immediate, private care for emotional well-being.</p>
-              </div>
-            </article>
-            <article class="support-item" role="button" tabindex="0" data-appointment-card>
-              <div class="support-icon teal"><i class="fa-solid fa-syringe"></i></div>
-              <div>
-                <h4>Vaccinations & Health Screenings</h4>
-                <p>Keep up with requirements, preventive health.</p>
-              </div>
-            </article>
-          </div>
-          <button class="post-btn" type="button" data-review-medical>Book Medical Appointment</button>
+<div class="support-grid">
+        <!-- LEFT: Doctor Selection (rendered by JS) -->
+        <article class="ui-card support-panel mentor-panel">
+          <h3>Doctor Availability</h3>
+          <div class="support-list doctor-list" aria-label="Doctor list"></div>
+          <div class="no-mentors-message" style="display:none;color:#c00;margin:10px 0;">No doctors with available slots found.</div>
         </article>
 
         <!-- MIDDLE: Calendar + Slots -->
-        <article class="ui-card support-panel">
-          <h3>Select Your Date & Time Slot</h3>
+        <article class="ui-card support-panel calendar-panel">
+          <h3>Available Dates & Times</h3>
           <div class="calendar-card">
             <div class="calendar-head">
-              <button class="icon-btn" type="button" data-calendar-prev><i class="fa-solid fa-chevron-left"></i></button>
+              <button class="icon-btn" type="button" data-calendar-prev aria-label="Previous month"><i class="fa-solid fa-chevron-left"></i></button>
               <span>Oct 15, 2026</span>
-              <button class="icon-btn" type="button" data-calendar-next><i class="fa-solid fa-chevron-right"></i></button>
+              <button class="icon-btn" type="button" data-calendar-next aria-label="Next month"><i class="fa-solid fa-chevron-right"></i></button>
             </div>
             <div class="calendar-grid">
               <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
-              <span>29</span><span>30</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
-              <span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span>
-              <span>13</span><span>14</span><span class="active">15</span><span>16</span><span>17</span><span>18</span><span>19</span>
-              <span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span>
-              <span>27</span><span>28</span><span>29</span><span>30</span><span>31</span><span>1</span><span>2</span>
             </div>
           </div>
-          <div class="slot-list">
-            <button class="slot-btn" type="button" data-slot>10:00 AM - 10:45 AM</button>
-            <button class="slot-btn active" type="button" data-slot>1:00 PM - 1:45 PM</button>
-            <button class="slot-btn" type="button" data-slot>4:00 PM - 4:45 PM</button>
-          </div>
+          <div class="slot-list" aria-label="Slot list"></div>
+          <div class="no-slots-message" style="display:none;color:#c00;margin:10px 0;">No available slots for this doctor.</div>
         </article>
 
         <!-- RIGHT: Summary + Help -->
@@ -87,10 +56,22 @@
           <div class="summary-box" data-medical-summary>
             <p><strong>Location:</strong> University Medical Center (Building D)</p>
             <p><strong>Date:</strong> Oct 15, 2026</p>
-            <p><strong>Time:</strong> 1:00 PM - 1:45 PM</p>
-            <p><strong>Type:</strong> General Practitioner Consultation</p>
+          <p><strong>Time:</strong> -</p>
+            <p><strong>Doctor:</strong> -</p>
           </div>
           <button class="post-btn" type="button" data-confirm-medical>Confirm Medical Slot</button>
+
+          <div class="chat-box">
+            <h4>Medical Chat</h4>
+            <p data-medical-chat-peer>Chat with selected doctor (After Booking)</p>
+            <div class="chat-window" data-medical-chat-window>
+              <div class="chat-empty">Book your medical slot to start chatting with your doctor.</div>
+            </div>
+            <div class="chat-input">
+              <input type="text" maxlength="500" autocomplete="off" placeholder="Type your message..." aria-label="Medical chat message" data-medical-chat-input disabled />
+              <button type="button" data-medical-chat-send aria-label="Send medical chat message" disabled><i class="fa-solid fa-paper-plane"></i></button>
+            </div>
+          </div>
 
           <div class="support-alert">
             <h4>Get Immediate Support</h4>
@@ -111,10 +92,10 @@
 </div>
 
 <nav class="mobile-nav">
-  <a class="nav-btn" href="wall.html"><i class="fa-solid fa-house"></i></a>
-  <a class="nav-btn" href="mood.html"><i class="fa-solid fa-chart-pie"></i></a>
-  <a class="nav-btn" href="talent.html"><i class="fa-solid fa-user-group"></i></a>
-  <a class="nav-btn" href="resource.html"><i class="fa-solid fa-book-medical"></i></a>
+  <a class="nav-btn" href="wall.html" aria-label="Safe-Base Wall"><i class="fa-solid fa-house"></i></a>
+  <a class="nav-btn" href="mood.html" aria-label="Mood Trends"><i class="fa-solid fa-chart-pie"></i></a>
+  <a class="nav-btn" href="talent.html" aria-label="Talent Exchange"><i class="fa-solid fa-user-group"></i></a>
+  <a class="nav-btn" href="resource.html" aria-label="Resource Hub"><i class="fa-solid fa-book-medical"></i></a>
   <a class="nav-btn hidden" href="wall.html#lecturer" data-role="lecturer" aria-label="Mentor Availability"><i class="fa-solid fa-calendar-check"></i></a>
   <button class="nav-btn nav-logout" type="button" data-logout aria-label="Sign Out">
     <i class="fa-solid fa-arrow-right-from-bracket"></i>
@@ -122,5 +103,6 @@
 </nav>
 
 <div id="toastContainer" class="toast-container"></div>
-<script src="app.js?v=ui-polish-1"></script>
+<script src="app-bg-slider.js?v=bg-slider-fit-1"></script>
+<script src="app.js?v=provider-chat-1"></script>
 </body></html>
