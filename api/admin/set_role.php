@@ -9,17 +9,17 @@ require_once __DIR__ . "/../config/db.php";
 require_once __DIR__ . "/../helpers/response.php";
 require_once __DIR__ . "/../helpers/auth.php";
 
-$admin = requireAdmin();
+$admin = requireSuperAdmin();
 $in = json_decode(file_get_contents("php://input"), true);
 $id = (int)($in["id"] ?? 0);
 $role = trim(strtolower($in["role"] ?? ""));
 
 if ($id <= 0) jsonResponse(false, "Valid user id required", null, 422);
-if (!in_array($role, ["student", "lecturer", "admin"], true)) {
+if (!in_array($role, ["student", "lecturer", "doctor", "admin", "super_admin"], true)) {
     jsonResponse(false, "Invalid role", null, 422);
 }
-if ($id === (int)$admin["id"] && $role !== "admin") {
-    jsonResponse(false, "You cannot remove your own admin role", null, 422);
+if ($id === (int)$admin["id"]) {
+    jsonResponse(false, "Safety check: You cannot change your own super_admin role, as this would lock you out of the admin panel. Please test by changing another user's role.", null, 422);
 }
 
 try {
