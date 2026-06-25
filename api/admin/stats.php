@@ -13,7 +13,12 @@ try {
     $comments = (int)$pdo->query("SELECT COUNT(*) c FROM comments")->fetch()["c"];
     $talentProfiles = (int)$pdo->query("SELECT COUNT(*) c FROM talent_profiles")->fetch()["c"];
     $resourceRequests = (int)$pdo->query("SELECT COUNT(*) c FROM resource_requests")->fetch()["c"];
-    $availability = (int)$pdo->query("SELECT COUNT(*) c FROM mentor_availability WHERE is_active=1")->fetch()["c"];
+    $availability = (int)$pdo->query("
+        SELECT COUNT(*) c
+        FROM mentor_availability ma
+        JOIN users u ON u.id = ma.lecturer_id AND u.role = 'lecturer'
+        WHERE ma.is_active = 1
+    ")->fetch()["c"];
 
     jsonResponse(true, "Admin stats", [
         "users"=>$users,
