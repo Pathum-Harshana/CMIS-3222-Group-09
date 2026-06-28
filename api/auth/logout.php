@@ -1,8 +1,16 @@
 <?php
 // Set session cookie path for subdirectory and start session before any output
 if (session_status() === PHP_SESSION_NONE) {
+	// Derive cookie path from the current request so it matches the deployed base URL.
+	$reqPath = $_SERVER['REQUEST_URI'] ?? '/';
+	$baseDir = '/';
+	if (is_string($reqPath)) {
+		if (preg_match('#^/[^/]+/#', $reqPath, $m)) {
+			$baseDir = rtrim($m[0], '/') . '/';
+		}
+	}
 	session_set_cookie_params([
-		'path' => '/Aurahub/',
+		'path' => $baseDir,
 		'httponly' => true,
 		'samesite' => 'Lax'
 	]);

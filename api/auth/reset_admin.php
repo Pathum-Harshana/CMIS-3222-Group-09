@@ -1,5 +1,19 @@
 <?php
 header("Content-Type: application/json; charset=UTF-8");
+
+$remoteAddr = $_SERVER["REMOTE_ADDR"] ?? "";
+$isCli = PHP_SAPI === "cli";
+$isLocalRequest = in_array($remoteAddr, ["127.0.0.1", "::1"], true);
+
+if (!$isCli && !$isLocalRequest) {
+    http_response_code(403);
+    echo json_encode([
+        "success" => false,
+        "message" => "Admin reset is only available locally"
+    ]);
+    exit;
+}
+
 require_once __DIR__ . "/../config/db.php";
 
 $email = "admin@aurahub.local";
@@ -17,8 +31,7 @@ try {
         echo json_encode([
             "success" => true,
             "message" => "Admin account updated",
-            "email" => $email,
-            "password" => $plainPassword
+            "email" => $email
         ]);
     } else {
         $i = $pdo->prepare("INSERT INTO users (full_name, email, password_hash, role) VALUES ('System Admin', :email, :hash, 'admin')");
@@ -26,8 +39,7 @@ try {
         echo json_encode([
             "success" => true,
             "message" => "Admin account created",
-            "email" => $email,
-            "password" => $plainPassword
+            "email" => $email
         ]);
     }
 } catch (Throwable $e) {
