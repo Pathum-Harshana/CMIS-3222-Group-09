@@ -10,8 +10,8 @@ require_once __DIR__ . "/../helpers/response.php";
 require_once __DIR__ . "/../helpers/auth.php";
 
 $user = requireLogin();
-if (!in_array($user["role"], ["lecturer", "admin"], true)) {
-    jsonResponse(false, "Lecturer access required", null, 403);
+if (!in_array($user["role"], ["super_admin", "lecturer", "doctor"], true)) {
+    jsonResponse(false, "Access denied", null, 403);
 }
 
 $in = json_decode(file_get_contents("php://input"), true);
@@ -21,11 +21,22 @@ if ($id <= 0) jsonResponse(false, "Valid availability id is required", null, 422
 try {
     $params = [":id" => $id];
     $where = "id = :id";
-    if ($user["role"] === "lecturer") {
+    $table = "mentor_availability";
+
+    if ($user["role"] === "doctor") {
+        $table = "doctor_availability";
+        $where .= " AND doctor_id = :uid";
+        $params[":uid"] = $user["id"];
+    } elseif ($user["role"] === "lecturer") {
         $where .= " AND lecturer_id = :uid";
         $params[":uid"] = $user["id"];
     }
-    $stmt = $pdo->prepare("UPDATE mentor_availability SET is_active = 0 WHERE $where");
+
+    if ($table === "doctor_availability") {
+        $stmt = $pdo->prepare("DELETE FROM $table WHERE $where");
+    } else {
+        $stmt = $pdo->prepare("UPDATE $table SET is_active = 0 WHERE $where");
+    }
     $stmt->execute($params);
     jsonResponse(true, "Availability removed", ["id" => $id]);
 } catch (Throwable $e) {
