@@ -1,6 +1,9 @@
-# TODO
-- [ ] Fix broken CSS structure in style.css where a media/selector block seems to be accidentally nested (book-session/medical-support section).
-- [ ] Verify CSS file has valid closing braces so the rest of the stylesheet loads correctly.
-- [ ] Apply minimal targeted patch to restore proper parsing.
-- [ ] Open mood.html, book-session.html, and resource.html in browser to confirm styling.
+# TODO - Failed to load resource (net::ERR_CONNECTION_RESET)
+
+- [x] Inspect and modify `api/config/db.php` to remove/limit runtime DDL operations (CREATE/ALTER) executed on every request.
+- [x] Add server-side logging in `api/config/db.php` and auth endpoints to capture root cause of connection resets.
+
+- [ ] Verify login/signup flows in browser and confirm no connection reset.
+- [ ] (If needed) add minimal client-side diagnostics in `auth.js` to surface failing URL.
+
 
