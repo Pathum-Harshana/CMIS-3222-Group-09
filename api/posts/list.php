@@ -15,7 +15,7 @@ requireLogin();
 
 try {
     $stmt = $pdo->query("
-        SELECT p.id,p.user_id,p.content,p.mood,p.is_flagged,p.is_reviewed,p.created_at,u.full_name
+        SELECT p.id,p.user_id,p.content,p.mood,p.is_anonymous,p.is_flagged,p.is_reviewed,p.created_at,u.full_name
         FROM posts p
         JOIN users u ON u.id=p.user_id
         ORDER BY p.created_at DESC

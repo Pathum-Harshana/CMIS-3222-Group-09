@@ -8,7 +8,7 @@ if ($_SERVER["REQUEST_METHOD"] === "OPTIONS") { http_response_code(200); exit; }
 require_once __DIR__ . "/../config/db.php";
 require_once __DIR__ . "/../helpers/response.php";
 require_once __DIR__ . "/../helpers/auth.php";
-$user = requireLogin();
+$user = requireSuperAdmin();
 
 if ($_SERVER["REQUEST_METHOD"] !== "POST") jsonResponse(false, "Invalid request method", null, 405);
 
@@ -22,9 +22,7 @@ try {
     $row = $q->fetch();
     if (!$row) jsonResponse(false, "Talent profile not found", null, 404);
 
-    if ($user["role"] !== "admin" && (int)$row["user_id"] !== (int)$user["id"]) {
-        jsonResponse(false, "Forbidden", null, 403);
-    }
+// Deletion now restricted to super admin only; no additional role checks
 
     $d = $pdo->prepare("DELETE FROM talent_profiles WHERE id=:id LIMIT 1");
     $d->execute([":id"=>$id]);
