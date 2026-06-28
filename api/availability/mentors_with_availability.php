@@ -29,7 +29,22 @@ try {
 
     // 2. Get all active, future availability slots from mentor_availability table
     //    - Only slots that are active and in the future are included
-    $slotsStmt = $pdo->query('SELECT * FROM mentor_availability WHERE is_active = 1 AND available_date >= CURDATE()');
+    $slotsStmt = $pdo->query('
+        SELECT ma.*,
+               CASE WHEN EXISTS (
+                   SELECT 1
+                   FROM session_bookings sb
+                   WHERE sb.mentor_id = ma.lecturer_id
+                     AND sb.session_date = ma.available_date
+                     AND sb.status = "booked"
+                     AND sb.start_time < ma.end_time
+                     AND sb.end_time > ma.start_time
+               ) THEN 1 ELSE 0 END AS is_booked
+        FROM mentor_availability ma
+        JOIN users u ON u.id = ma.lecturer_id AND u.role = "lecturer"
+        WHERE ma.is_active = 1 AND ma.available_date >= CURDATE()
+        ORDER BY ma.available_date ASC, ma.start_time ASC
+    ');
     $slots = $slotsStmt->fetchAll();
 
     // 3. Group slots by lecturer_id for easy lookup
